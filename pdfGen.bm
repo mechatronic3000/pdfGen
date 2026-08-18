@@ -1,0 +1,3726 @@
+'Filename:pdfGen.bm
+$INCLUDEONCE
+'$INCLUDE:'pdfGen.bi'
+'_pdf_MtPDFGen Documentaion
+'_pdf_MaJustsomeguy
+'_pdf_MsDocumentation
+'_pdf_+B#40,440FF1,Courier_FF2,Courier-Bold_FF3,Symbol@F2,6W240L6
+'_pdf_T                                      :::::::::  :::::::::  :::::::::: ::::::::  :::::::::: ::::    :::
+'_pdf_T                                      :+:    :+: :+:    :+: :+:       :+:    :+: :+:        :+:+:   :+:
+'_pdf_T                                      +:+    +:+ +:+    +:+ +:+       +:+        +:+        :+:+:+  +:+
+'_pdf_T                                      +#++:++#+  +#+    +:+ :#::+::#  :#:        +#++:++#   +#+ +:+ +#+
+'_pdf_T                                      +#+        +#+    +#+ +#+       +#+   +#+# +#+        +#+  +#+#+#
+'_pdf_T                                      #+#        #+#    #+# #+#       #+#    #+# #+#        #+#   #+#+#
+'_pdf_T                                      ###        #########  ###        ########  ########## ###    ####
+'_pdf_T
+'_pdf_T
+'_pdf_T
+'_pdf_T     :::::::::   ::::::::   ::::::::  :::    ::: ::::    ::::  :::::::::: ::::    ::: ::::::::::: ::: ::::::::::: ::::::::::: ::::::::  ::::    :::
+'_pdf_T     :+:    :+: :+:    :+: :+:    :+: :+:    :+: +:+:+: :+:+:+ :+:        :+:+:   :+:     :+:   :+: :+:   :+:         :+:    :+:    :+: :+:+:   :+:
+'_pdf_T     +:+    +:+ +:+    +:+ +:+        +:+    +:+ +:+ +:+:+ +:+ +:+        :+:+:+  +:+     +:+  +:+   +:+  +:+         +:+    +:+    +:+ :+:+:+  +:+
+'_pdf_T     +#+    +:+ +#+    +:+ +#+        +#+    +:+ +#+  +:+  +#+ +#++:++#   +#+ +:+ +#+     +#+ +#++:++#++: +#+         +#+    +#+    +:+ +#+ +:+ +#+
+'_pdf_T     +#+    +#+ +#+    +#+ +#+        +#+    +#+ +#+       +#+ +#+        +#+  +#+#+#     +#+ +#+     +#+ +#+         +#+    +#+    +#+ +#+  +#+#+#
+'_pdf_T     #+#    #+# #+#    #+# #+#    #+# #+#    #+# #+#       #+# #+#        #+#   #+#+#     #+# #+#     #+# #+#         #+#    #+#    #+# #+#   #+#+#
+'_pdf_T     #########   ########   ########   ########  ###       ### ########## ###    ####     ### ###     ### ###     ########### ########  ###    ####
+'_pdf_T
+'_pdf_T
+'_pdf_T
+'_pdf_E+#40,740@F2,16W70L18
+'_pdf_T Purpose:
+'_pdf_@F1,12L14T
+'_pdf_T This library is designed to allow a user to procedurally generate PDF files.
+'_pdf_T It is a low level so the user has maximum control over the appearance of the document.
+'_pdf_T
+'_pdf_@F2,16W70L18TFeatures:
+'_pdf_@F1,12L14T
+'_pdf_T Currently it only supports the 14 type 1 fonts that are built-in to most viewers.
+'_pdf_T
+'_pdf_T                    * Times-Roman
+'_pdf_T                    * Times-Bold
+'_pdf_T                    * Times-Italic
+'_pdf_T                    * Times-BoldItalic
+'_pdf_T                    * Helvetica
+'_pdf_T                    * Helvetica-Bold
+'_pdf_T                    * Helvetica-Oblique
+'_pdf_T                    * Helvetica-BoldOblique
+'_pdf_T                    * Courier
+'_pdf_T                    * Courier-Bold
+'_pdf_T                    * Courier-Oblique
+'_pdf_T                    * Courier-BoldOblique
+'_pdf_T                    * Symbol
+'_pdf_T                    * ZapfDingbats
+'_pdf_T
+'_pdf_T
+'_pdf_T Images can be imported scaled and rotated in the document. Most image types are supported.
+'_pdf_T
+'_pdf_T
+'_pdf_T
+'_pdf_T
+'_pdf_T
+'_pdf_T
+'_pdf_T
+'_pdf_T
+'_pdf_T
+'_pdf_IlIcon.png,IM1_Ip220_210_IdIM1
+'_pdf_T Multicolor vector graphics can also be implemented.
+'_pdf_Xw4_Xc0,.5,0_Xr40,50,500,100Xs
+'_pdf_Xc.75,0,0_Xb40,50_Xl290,150_Xl540,50Xs
+'_pdf_Xc0,0,.75_Xb40,150_Xl290,50_Xl540,150Xs
+'_pdf_)
+PRINT "Doh! I'm the library not the main program!"
+SUB pdfSetVar (id AS STRING, value AS STRING)
+  DIM AS LONG uB, i
+  uB = UBOUND(pdfVars)
+  i = 0: DO
+    'check if it already exist, if so put value there
+    IF pdfVars(i).varName = id THEN
+      pdfVars(i).varValue = value
+      EXIT SUB
+    END IF
+  i = i + 1: LOOP WHILE i < uB
+  REDIM _PRESERVE pdfVars(uB + 1) AS tPDFVARS
+  uB = UBOUND(pdfVars)
+  pdfVars(uB).varName = id
+  pdfVars(uB).varValue = value
+END SUB
+FUNCTION pdfGetVar$ (id AS STRING)
+  DIM AS LONG uB, i
+  uB = UBOUND(pdfVars)
+  i = 0: DO
+    IF UCASE$(pdfVars(i).varName) = UCASE$(id) THEN
+      pdfGetVar = pdfVars(i).varValue
+      EXIT FUNCTION
+    END IF
+  i = i + 1: LOOP WHILE i <= uB
+END FUNCTION
+
+'_pdf_E+#40,740@F2,40W40L44
+'_pdf_T     Library Subs
+'_pdf_T
+'_pdf_@F2,14W60L16
+'_pdf_(
+SUB pdfAddPage
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Adds a page to the document. A page must always be added. Once a new page is added you cannot edit previous pages.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T  None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF AddPage Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 64
+  '_pdf_T pdfSetPosition 120, 350
+  '_pdf_T pdfAddText "This is a page"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 64
+  '_pdf_T pdfSetPosition 35, 350
+  '_pdf_T pdfAddText "This is another page"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfAddPageExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub, pgs
+  ub = UBOUND(pdfPage)
+  pdfPage(ub).mediaBox = pdfDefault.mediaBox
+  pdfPage(ub).cropBox = pdfDefault.cropBox
+  pdfPage(ub).ll.parent = ub - 1
+  pdfPage(ub).ll.child = ub + 1
+  pgs = ub
+  REDIM _PRESERVE pdfPage(ub + 1) AS tPDFPAGE
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_ADD_PAGE
+  pdfCommand(ub).argLong1 = pdfStates.pageCount
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+  pdfStates.pageCount = pdfStates.pageCount + 1
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfLoadFont (nm AS STRING, fnt AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Loads an internal font and assigns an ID. Fonts must be loaded before use. Constants have been included in the Library.
+  '_pdf_@F1,10W80L12
+  '_pdf_T * Times-Roman      * Helvetica             * Courier
+  '_pdf_T * Times-Bold       * Helvetica-Bold        * Courier-Bold
+  '_pdf_T * Times-Italic     * Helvetica-Oblique     * Courier-Oblique
+  '_pdf_T * Times-BoldItalic * Helvetica-BoldOblique * Courier-BoldOblique
+  '_pdf_T                    * Symbol
+  '_pdf_T                    * ZapfDingbats
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T  nm  - Id that the user assigns to the font ex. F1
+  '_pdf_T  fnt - name of internal font ex. Times-Roman
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,6W80L7T'$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF Load Font Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_COURIER
+  '_pdf_T pdfLoadFont "F2", PDF_FONT_COURIER_BOLD
+  '_pdf_T pdfLoadFont "F3", PDF_FONT_COURIER_OBLIQUE
+  '_pdf_T pdfLoadFont "F4", PDF_FONT_COURIER_BOLD_OBLIQUE
+  '_pdf_T pdfLoadFont "F5", PDF_FONT_HELVETICA
+  '_pdf_T pdfLoadFont "F6", PDF_FONT_HELVETICA_BOLD
+  '_pdf_T pdfLoadFont "F7", PDF_FONT_HELVETICA_OBLIQUE
+  '_pdf_T pdfLoadFont "F8", PDF_FONT_HELVETICA_BOLD_OBLIQUE
+  '_pdf_T pdfLoadFont "F9", PDF_FONT_SYMBOL
+  '_pdf_T pdfLoadFont "F10", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfLoadFont "F11", PDF_FONT_TIMES_BOLD
+  '_pdf_T pdfLoadFont "F12", PDF_FONT_TIMES_ITALIC
+  '_pdf_T pdfLoadFont "F13", PDF_FONT_TIMES_BOLD_ITALIC
+  '_pdf_T pdfLoadFont "F14", PDF_FONT_ZAPFDINGBATS
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 12
+  '_pdf_T pdfSetLeading 15
+  '_pdf_T pdfSetPosition 40, 700
+  '_pdf_T pdfAddText "Courier": pdfNextLine
+  '_pdf_T pdfSetFontSize "F2", 12
+  '_pdf_T pdfAddText "Courier Bold": pdfNextLine
+  '_pdf_T pdfSetFontSize "F3", 12
+  '_pdf_T pdfAddText "Courier Oblique": pdfNextLine
+  '_pdf_T pdfSetFontSize "F4", 12
+  '_pdf_T pdfAddText "Courier Bold Oblique": pdfNextLine
+  '_pdf_T pdfSetFontSize "F5", 12
+  '_pdf_T pdfAddText "Helvetica": pdfNextLine
+  '_pdf_T pdfSetFontSize "F6", 12
+  '_pdf_T pdfAddText "Helvetica Bold": pdfNextLine
+  '_pdf_T pdfSetFontSize "F7", 12
+  '_pdf_T pdfAddText "Helvetica Oblique": pdfNextLine
+  '_pdf_T pdfSetFontSize "F8", 12
+  '_pdf_T pdfAddText "Helvetica Bold Oblique": pdfNextLine
+  '_pdf_T pdfSetFontSize "F1", 12
+  '_pdf_T pdfAddText "Symbol  ": pdfSetFontSize "F9", 12: pdfAddText "abcdefgh": pdfNextLine
+  '_pdf_T pdfSetFontSize "F10", 12
+  '_pdf_T pdfAddText "Times Roman": pdfNextLine
+  '_pdf_T pdfSetFontSize "F11", 12
+  '_pdf_T pdfAddText "Times Bold": pdfNextLine
+  '_pdf_T pdfSetFontSize "F12", 12
+  '_pdf_T pdfAddText "Times Italic": pdfNextLine
+  '_pdf_T pdfSetFontSize "F13", 12
+  '_pdf_T pdfAddText "Times Bold Italic": pdfNextLine
+  '_pdf_T pdfSetFontSize "F1", 12
+  '_pdf_T pdfAddText "ZAPFDINGBATS  ": pdfSetFontSize "F14", 12: pdfAddText "abcdefgh": pdfNextLine
+  '_pdf_T pdfEndText
+  '_pdf_T pdfGen "pdfLoadFontExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfFont)
+  pdfFont(ub).font_name = nm
+  pdfFont(ub).font = fnt
+  pdfFont(ub).font_size = sz
+  pdfFont(ub).encoding = pdfDefault.fontEncoding
+  pdfPage(UBOUND(pdfPage) - 1).font = nm
+  REDIM _PRESERVE pdfFont(ub + 1) AS tPDFFONT
+END SUB
+
+FUNCTION pdfAddObject (obtype AS LONG)
+  DIM AS LONG ub
+  ub = UBOUND(pdfObject)
+  pdfObject(ub).obtype = obtype
+  REDIM _PRESERVE pdfObject(ub + 1) AS tPDFOBJECT
+  pdfAddObject = ub
+END FUNCTION
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetPosition (x AS LONG, y AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the position where text will be drawn. Positions are relative.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   x - position
+  '_pdf_T   y - position
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11T
+  '_pdf_T  '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T  pdfSetTitle "PDF SetPosition Example"
+  '_pdf_T  pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T  pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T
+  '_pdf_T  pdfAddPage
+  '_pdf_T
+  '_pdf_T  pdfBeginText
+  '_pdf_T  pdfSetFontSize "F1", 24
+  '_pdf_T  pdfSetPosition 120, 350
+  '_pdf_T  pdfAddText "This is 120,350."
+  '_pdf_T  pdfSetPosition 60, 60
+  '_pdf_T  pdfAddText "This is 60, 60 from previous position."
+  '_pdf_T  pdfEndText
+  '_pdf_T
+  '_pdf_T  pdfGen "pdfSetPositionExample.pdf"
+  '_pdf_T  SYSTEM
+  '_pdf_T
+  '_pdf_T  '$INCLUDE:'pdfGen.bm'
+  '_pdf_T
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_SET_POSITION
+  pdfCommand(ub).argVec1.x = x
+  pdfCommand(ub).argVec1.y = y
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfAddText (s AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Adds text to the page. Good for short text.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   s - Text string
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF AddText Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 24
+  '_pdf_T pdfSetPosition 200, 350
+  '_pdf_T
+  '_pdf_T pdfAddText "This is some short text."
+  '_pdf_T
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfAddTextExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_TEXT
+  pdfCommand(ub).s = escapeSeq(s)
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+  pdfStates.text = True
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfAddTextBlock (l AS LONG, s AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Adds text to the page. Will start a new line after exceeds a specified length.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   l - Length in characters to start a new line.
+  '_pdf_T   s - Text string
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,11W80L11T
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF AddTextBlock Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 24
+  '_pdf_T pdfSetPosition 30, 450
+  '_pdf_T pdfSetLeading 26 'Must be set before calling pdfAddTextBlock
+  '_pdf_T
+  '_pdf_T 'Moby Dick - Herman Melville
+  '_pdf_T pdfAddTextBlock 60, "Call me Ishmael. Some years ago - never mind how long precisely - having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world."
+  '_pdf_T
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfAddTextBlockExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_TEXT_BLOCK
+  pdfCommand(ub).s = escapeSeq(s)
+  pdfCommand(ub).argLong1 = l
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+  pdfStates.text = True
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+FUNCTION pdfAddTextBlockEx$ (lmax AS LONG, lcMax AS LONG, s AS STRING)
+  '_pdf_)
+  '_pdf_@F1,12W60L14
+  '_pdf_T
+  '_pdf_T Adds text to the page. Will start a new line after exceeds a specified length. If the line count exceeds lcMax the function will return the left over text.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,12W80L14
+  '_pdf_T   lmax - Length in characters to start a new line.
+  '_pdf_T   lcMax - Number of lines before returning the left over text.
+  '_pdf_T   s - Text string
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16
+  '_pdf_T   Returns a string with the left over text.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF AddTextBlockEx Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 30, 720
+  '_pdf_T pdfSetFontSize "F1", 18
+  '_pdf_T pdfSetLeading 20
+  '_pdf_T FOR l& = 1 TO 400: bigString$ = bigString$ + RandomWord + " ": NEXT
+  '_pdf_T lineCount& = 33 ' Set the line count max.
+  '_pdf_T charCount& = 48
+  '_pdf_T DO
+  '_pdf_T   bigString$ = pdfAddTextBlockEx(charCount&, lineCount&, bigString$)
+  '_pdf_T   IF LEN(bigString$) > 0 THEN ' Start a new page
+  '_pdf_T     pdfEndText 'End the text block
+  '_pdf_T     pdfAddPage ' Add a page
+  '_pdf_T     pdfBeginText ' Begin New Text Block
+  '_pdf_T     pdfSetFontSize "F1", 18
+  '_pdf_T     pdfSetPosition 30, 720
+  '_pdf_T     pdfSetLeading 20
+  '_pdf_T   END IF
+  '_pdf_T LOOP WHILE LEN(bigString$) > 0
+  '_pdf_T pdfEndText
+  '_pdf_T pdfGen "pdfAddTextBlockEx_Example.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+  '_pdf_T
+  '_pdf_T FUNCTION RandomWord$
+  '_pdf_T   consonants$ = "BCDFGHJKLMNPRSTVWYZ": vowels$ = "AEIOU"
+  '_pdf_T   Z& = (RND * 2) + 2
+  '_pdf_T   FOR X& = 1 TO Z&
+  '_pdf_T     B& = (RND * 19) + 1: c$ = c$ + MID$(consonants$, B&, 1)
+  '_pdf_T     IF LEN(c$) > 4 THEN vowels$ = "AEIOUY"
+  '_pdf_T     B& = (RND * 4) + 1: c$ = c$ + MID$(vowels$, B&, 1)
+  '_pdf_T   NEXT
+  '_pdf_T   B& = (RND * 4)
+  '_pdf_T   IF B& >= 1 AND LEN(c$) > 5 THEN c$ = LEFT$(c$, LEN(c$) - 1)
+  '_pdf_T   RandomWord$ = c$
+  '_pdf_T END FUNCTION
+
+
+  DIM AS STRING tempStr: tempStr = s
+  DIM AS STRING lf
+  DIM AS LONG ln, sp, lc
+  lc = 0
+  DO
+    ln = _IIF(LEN(tempStr) > lmax, lmax, LEN(tempStr))
+    sp = _INSTRREV(ln, tempStr, " ")
+    IF sp > 0 AND LEN(tempStr) > lmax THEN ln = sp
+    lf = LEFT$(tempStr, ln)
+    tempStr = MID$(tempStr, ln + 1)
+    IF lc > 0 THEN
+      pdfNextLine
+    END IF
+    pdfAddText lf
+    lc = lc + 1
+    IF lc > lcMax THEN EXIT DO
+  LOOP WHILE LEN(tempStr) > 0
+  pdfAddTextBlockEx$ = tempStr
+END FUNCTION
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfBeginText
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Starts a text block. All text operations must be done within a block. Resets position back to lower left corner.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF BeginText Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition 150, 350 'Initial position
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfSetPosition 20, 20 'Relative position
+  '_pdf_T pdfAddText " This some more text."
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfBeginText 'Resets back to lower left
+  '_pdf_T
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition 150, 300
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfSetPosition 20, 20 'Relative position
+  '_pdf_T pdfAddText " This some more text."
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfBeginTextExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_BEGIN_TEXT
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+  pdfStates.text = True
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfEndText
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Closes a text block.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF EndText Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T
+  '_pdf_T pdfBeginText 'Begin Text Block
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition 150, 350 'Initial position
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T
+  '_pdf_T pdfEndText 'End Text Block
+  '_pdf_T
+  '_pdf_T pdfGen "pdfEndTextExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_END_TEXT
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+  pdfStates.text = False
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfNextLine
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Acts as a carriage return after a text has been added. The distance moved down is set by pdfSetLeading xx.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF NextLine Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition 150, 350 'Initial position
+  '_pdf_T pdfSetLeading 15
+  '_pdf_T
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfAddText " This is some more text."
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfAddText "This is some text on a new line."
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfNextLineExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_NEXT_LINE
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+  pdfStates.text = False
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetRenderMode (m AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T The text rendering mode determines whether showing text causes glyph outlines to be stroked, filled, used as a clipping boundary, or some combination of the three.
+  '_pdf_@F1,12W70L12T
+  '_pdf_T   PDF_RENDER_MODE_FILL - Fill text.
+  '_pdf_T   PDF_RENDER_MODE_STROKE - Stroke text.
+  '_pdf_T   PDF_RENDER_MODE_FILL_STROKE - Fill, then stroke text.
+  '_pdf_T   PDF_RENDER_MODE_INVISIBLE - Neither fill nor stroke text (invisible).
+  '_pdf_T   PDF_RENDER_MODE_FILL_ADD_PATH - Fill text and add to path for clipping
+  '_pdf_T   PDF_RENDER_MODE_STROKE_ADD_PATH - Stroke text and add to path for clipping.
+  '_pdf_T   PDF_RENDER_MODE_FILL_STROKE_ADD_PATH - Fill, then stroke text and add to path for clipping.
+  '_pdf_T   PDF_RENDER_MODE_ADD_PATH - Add text to path for clipping.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   m - mode
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF RenderMode Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_BOLD
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 64
+  '_pdf_T pdfSetPosition 200, 414 'Initial position
+  '_pdf_T pdfSetStrokeWidth .25
+  '_pdf_T pdfSetRenderMode PDF_RENDER_MODE_STROKE_ADD_PATH
+  '_pdf_T pdfAddText "pdfGEN"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 200, 480 'Initial position
+  '_pdf_T pdfSetFontSize "F1", 6: pdfSetLeading 6
+  '_pdf_T pdfSetRenderMode PDF_RENDER_MODE_FILL
+  '_pdf_T FOR i& = 0 TO 1000: s$ = s$ + "clipped": NEXT
+  '_pdf_T pdfAddTextBlock 100, s$
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfRenderModeExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_TEXT_RENDER_MODE
+  pdfCommand(ub).argLong1 = m
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetGrayScaleStroke (g AS SINGLE)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the color space to grayscale and stroke to grayscale color.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Grayscale color 0.0-1.0
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF GrayScaleStroke Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T c# = 0.0
+  '_pdf_T FOR y& = 1 TO 5
+  '_pdf_T   pdfSetStrokeWidth 10
+  '_pdf_T   pdfSetGrayScaleStroke c#
+  '_pdf_T   pdfBeginPath 100, 550 - y& * 20
+  '_pdf_T   pdfAppendLine 500, 550 - y& * 20
+  '_pdf_T   pdfStrokePath
+  '_pdf_T
+  '_pdf_T   pdfSetGrayScaleStroke 0
+  '_pdf_T   pdfSetStrokeWidth 1
+  '_pdf_T   pdfRectangle 100, 545 - y& * 20, 400, 10
+  '_pdf_T   pdfStrokePath
+  '_pdf_T
+  '_pdf_T   pdfBeginText
+  '_pdf_T   pdfSetFontSize "F1", 10
+  '_pdf_T   pdfSetPosition 240, 547 - y& * 20
+  '_pdf_T   pdfSetGrayScaleNonStroke (1 - c#) * -(y& <> 3)
+  '_pdf_T   pdfAddText "Grayscale : " + STR$(c#)
+  '_pdf_T   pdfEndText
+  '_pdf_T   c# = c# + .25
+  '_pdf_T NEXT
+  '_pdf_T pdfGen "pdfGrayScaleStroketExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_GRAYSCALE_STROKE
+  pdfCommand(ub).argSingle1 = g
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetGrayScaleNonStroke (g AS SINGLE)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the color space to grayscale and non-stroke to grayscale color.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Grayscale color 0.0-1.0
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF GrayScaleNonStroke Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T c# = 0.0
+  '_pdf_T FOR y& = 1 TO 5
+  '_pdf_T pdfSetStrokeWidth 10
+  '_pdf_T pdfSetGrayScaleStroke c#
+  '_pdf_T pdfBeginPath 45, 650 - y& * 20
+  '_pdf_T pdfAppendLine 120, 650 - y& * 20
+  '_pdf_T pdfStrokePath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 10
+  '_pdf_T pdfSetPosition 50, 647 - y& * 20
+  '_pdf_T pdfSetGrayScaleNonStroke (1 - c#) * -(y& <> 3)
+  '_pdf_T pdfAddText "Grayscale : " + STR$(c#)
+  '_pdf_T pdfEndText
+  '_pdf_T c# = c# + .25
+  '_pdf_T NEXT
+  '_pdf_T pdfGen "pdfGrayScaleNonStrokeExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_GRAYSCALE_NONSTROKE
+  pdfCommand(ub).argSingle1 = g
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetStrokeWidth (sw AS SINGLE)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the width of the line stroke.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   sw - width
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF Stroke Width Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T
+  '_pdf_T FOR y# = 1 TO 10 STEP .5
+  '_pdf_T   pdfSetStrokeWidth y#
+  '_pdf_T   pdfBeginPath 150, 550 - y# * 30
+  '_pdf_T   pdfAppendLine 250, 550 - y# * 30
+  '_pdf_T   pdfStrokePath
+  '_pdf_T   pdfBeginText
+  '_pdf_T   pdfSetFontSize "F1", 12
+  '_pdf_T   pdfSetPosition 50, 547 - y# * 30
+  '_pdf_T   pdfAddText "Stroke width : " + STR$(y#)
+  '_pdf_T   pdfEndText
+  '_pdf_T NEXT
+  '_pdf_T pdfGen "pdfStrokeWidthExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_STROKE_WIDTH
+  pdfCommand(ub).argSingle1 = sw
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetCharacterSpacing (s AS SINGLE)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Set the character spacing, which is a number expressed in unscaled text space units.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   s - unscaled text space units
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF Character Spacing Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition 150, 350 'Initial position
+  '_pdf_T pdfSetLeading 15
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfSetCharacterSpacing 1
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfSetCharacterSpacing 2
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfSetCharacterSpacing 3
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfCharacterSpacingExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_CHARACTER_SPACING
+  pdfCommand(ub).argSingle1 = s
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetWordSpacing (s AS SINGLE)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Set the word spacing, to wordSpace, which is a number expressed in unscaled text space units.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   s - unscaled text space units
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF Word Spacing Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition 150, 650
+  '_pdf_T pdfSetLeading 15
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfSetWordSpacing 1
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfSetWordSpacing 2
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfSetWordSpacing 3
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfSetWordSpacing 4
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfSetWordSpacing 5
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfWordSpacingExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_WORD_SPACING
+  pdfCommand(ub).argSingle1 = s
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetHorizontalScaling (s AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Set the horizontal scaling. Scale is a number specifying the percentage of the normal width. Initial value: 100 (normal width).
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   s - percentage.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T   '$INCLUDE:'pdfGen.bi'
+  '_pdf_T   pdfSetTitle "PDF Horizontal Scaling Example"
+  '_pdf_T   pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T   pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T   pdfAddPage
+  '_pdf_T   pdfBeginText
+  '_pdf_T   pdfSetFontSize "F1", 48
+  '_pdf_T   pdfSetPosition 100, 720
+  '_pdf_T   pdfSetLeading 48
+  '_pdf_T   pdfSetHorizontalScaling 80
+  '_pdf_T   pdfAddText "This is some text."
+  '_pdf_T   pdfNextLine
+  '_pdf_T   pdfSetHorizontalScaling 90
+  '_pdf_T   pdfAddText "This is some text."
+  '_pdf_T   pdfNextLine
+  '_pdf_T   pdfSetHorizontalScaling 100
+  '_pdf_T   pdfAddText "This is some text."
+  '_pdf_T   pdfNextLine
+  '_pdf_T   pdfSetHorizontalScaling 110
+  '_pdf_T   pdfAddText "This is some text."
+  '_pdf_T   pdfNextLine
+  '_pdf_T   pdfSetHorizontalScaling 120
+  '_pdf_T   pdfAddText "This is some text."
+  '_pdf_T   pdfEndText
+  '_pdf_T
+  '_pdf_T   pdfGen "pdfHorizontalScalingExample.pdf"
+  '_pdf_T   SYSTEM
+  '_pdf_T   '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_HORIZONTAL_SCALE
+  pdfCommand(ub).argLong1 = s
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetLeading (l AS SINGLE)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the text leading in unscaled text space units. It specifies the vertical distance between the baselines of adjacent lines of text.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   l - Distance between lines.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF SetLeading Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 50, 720 'Initial position
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetLeading 14
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfSetLeading 16
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfSetLeading 18
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfSetLeading 20
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfSetLeading 22
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfSetLeading 24
+  '_pdf_T pdfNextLine
+  '_pdf_T pdfAddText "This is some text."
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfSetLeadingExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_TEXT_LEADING
+  pdfCommand(ub).argSingle1 = l
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetRise (r AS SINGLE)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Text rise specifies the distance, in unscaled text space units, to move the baseline up or down from its default location.
+
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   r - Amount of rise (+/-)
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T   pdfSetTitle "PDF SetRise Example"
+  '_pdf_T   pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T   pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T
+  '_pdf_T   pdfAddPage
+  '_pdf_T   pdfBeginText
+  '_pdf_T   pdfSetPosition 50, 720 'Initial position
+  '_pdf_T   pdfSetFontSize "F1", 14
+  '_pdf_T   pdfAddText "This is some text. "
+  '_pdf_T   pdfSetFontSize "F1", 7
+  '_pdf_T   pdfSetRise 7
+  '_pdf_T   pdfAddText "This is superscript"
+  '_pdf_T   pdfSetRise -3
+  '_pdf_T   pdfAddText "This is subscript"
+  '_pdf_T   pdfSetRise 0
+  '_pdf_T   pdfSetFontSize "F1", 14
+  '_pdf_T   pdfAddText "This is normal text"
+  '_pdf_T
+  '_pdf_T   pdfEndText
+  '_pdf_T
+  '_pdf_T   pdfGen "pdfSetRiseExample.pdf"
+  '_pdf_T   SYSTEM
+  '_pdf_T   '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_TEXT_RISE
+  pdfCommand(ub).argSingle1 = r
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfRotateText (x AS LONG, y AS LONG, deg AS SINGLE)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Helper function to set the matrix for a rotation around a fixed cooridinate.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   x - position
+  '_pdf_T   y - position
+  '_pdf_T   deg - rotation in degrees
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T  '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T  pdfSetTitle "PDF RotateText Example"
+  '_pdf_T  pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T  pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T
+  '_pdf_T  pdfAddPage
+  '_pdf_T  pdfBeginText
+  '_pdf_T  pdfSetFontSize "F1", 14
+  '_pdf_T  FOR deg! = 0 TO 360 STEP 15
+  '_pdf_T    pdfRotateText 300, 400, deg!
+  '_pdf_T    pdfAddText "           This is some text. "
+  '_pdf_T  NEXT
+  '_pdf_T  pdfEndText
+  '_pdf_T
+  '_pdf_T  pdfGen "pdfRotateTextExample.pdf"
+  '_pdf_T  SYSTEM
+  '_pdf_T  '$INCLUDE:'pdfGen.bm'
+
+  pdfSetMatrix COS(_D2R(deg)), SIN(_D2R(deg)), -SIN(_D2R(deg)), COS(_D2R(deg)), x, y
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetMatrix (a AS SINGLE, b AS SINGLE, _
+c AS SINGLE, d AS SINGLE, _
+e AS SINGLE, f AS SINGLE)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Set the text matrix.
+  '_pdf_@F3,14W180L14
+  '_pdf_T
+  '_pdf_T   \351              \371
+  '_pdf_T   \352              \372
+  '_pdf_T   \353              \373
+  '_pdf_T
+  '_pdf_EB#50,650@F1,14W60L16
+  '_pdf_T a b 0
+  '_pdf_T c d 0  = [a b c d e f]
+  '_pdf_T e f 1
+  '_pdf_T
+  '_pdf_T * Translations are specified as [1 0 0 1 tx ty ], where tx and ty are the distances to translate the origin of the coordinate system in the horizontal and vertical dimensions, respectively.
+  '_pdf_T * Scaling is obtained by [sx 0 0 sy 0 0]. This scales the coordinates so that 1 unit in the horizontal and vertical dimensions of the new coordinate system is the same size as sx and sy units, respectively, in the previous coordinate system.
+  '_pdf_T * Rotations are produced by [cos \371 sin \371 -sin \371 cos \371 0 0], which has the effect of rotating the coordinate system axes by an angle counterclockwise.
+  '_pdf_t * Skew is specified by [1 tan
+  '_pdf_@F3,14t  \141
+  '_pdf_@F1,14t tan
+  '_pdf_@F3,14t  \142
+  '_pdf_@F1,14T 1 0 0], which skews
+  '_pdf_t the x axis by an angle
+  '_pdf_@F3,14t  \141
+  '_pdf_@F1,14t and the y axis by an angle
+  '_pdf_@F3,14T  \142.
+  '_pdf_T
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   a-f elements of the matrix.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_+#40,740@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF SetMatrix Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 36
+  '_pdf_T
+  '_pdf_T xp! = 50 ' x position
+  '_pdf_T yp! = 700 ' y position
+  '_pdf_T pdfSetMatrix 1, 0, 0, 1, xp!, yp!
+  '_pdf_T pdfAddText "This is normal text."
+  '_pdf_T
+  '_pdf_T scaleX! = 2 ' x scale
+  '_pdf_T scaleY! = 2 ' y scale
+  '_pdf_T pdfSetMatrix scaleX!, 0, 0, scaleY!, xp!, yp! - 100.0
+  '_pdf_T pdfAddText "This is scaled text. "
+  '_pdf_T
+  '_pdf_T alpha! = 0.0 ' angle from x axis
+  '_pdf_T beta! = 45.0 ' angle from y axis
+  '_pdf_T pdfSetMatrix 1, TAN(_D2R(alpha!)), TAN(_D2R(beta!)), 1, xp!, yp! - 200
+  '_pdf_T pdfAddText "This is skewed text. "
+  '_pdf_T
+  '_pdf_T theta! = 30.0 ' angle of rotation
+  '_pdf_T pdfSetMatrix COS(_D2R(theta!)), SIN(_D2R(theta!)), -SIN(_D2R(theta!)), COS(_D2R(theta!)), xp!, yp! - 400
+  '_pdf_T pdfAddText "This is rotated text. "
+  '_pdf_T
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfSetMatrixExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+  '_pdf_E
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_SET_MATRIX
+  pdfCommand(ub).mat.a = a
+  pdfCommand(ub).mat.b = b
+  pdfCommand(ub).mat.c = c
+  pdfCommand(ub).mat.d = d
+  pdfCommand(ub).mat.e = e
+  pdfCommand(ub).mat.f = f
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfRotateImage (x AS LONG, y AS LONG, deg AS SINGLE)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T  Helper function to set the matrix for a rotation around a fixed cooridinate.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T  x - position
+  '_pdf_T  y - position
+  '_pdf_T  deg - angle in degrees around fixed point
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF Rotate Image Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadImage "Icon.png", "Im1"
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T FOR theta! = 0 TO 360 STEP 15
+  '_pdf_T   pdfPushGraphicsStack
+  '_pdf_T   pdfSetImageMatrix 100, 0, 0, 100, 300, 600
+  '_pdf_T   pdfRotateImage 0, 0, theta!
+  '_pdf_T   pdfPutImage "Im1"
+  '_pdf_T   pdfPopGraphicsStack
+  '_pdf_T NEXT
+  '_pdf_T
+  '_pdf_T pdfGen "pdfRotateImage.pdf"
+  '_pdf_T
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  pdfSetImageMatrix COS(_D2R(deg)), SIN(_D2R(deg)), -SIN(_D2R(deg)), COS(_D2R(deg)), x, y
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetImageMatrix (a AS SINGLE, b AS SINGLE, _
+c AS SINGLE, d AS SINGLE, _
+e AS SINGLE, f AS SINGLE)
+  '_pdf_)
+  '_pdf_T Set the Image matrix.
+  '_pdf_@F3,14W180L14
+  '_pdf_T
+  '_pdf_T   \351              \371
+  '_pdf_T   \352              \372
+  '_pdf_T   \353              \373
+  '_pdf_T
+  '_pdf_EB#50,682@F1,14W60L16
+  '_pdf_T
+  '_pdf_T a b 0
+  '_pdf_T c d 0  = [a b c d e f]
+  '_pdf_T e f 1
+  '_pdf_T
+  '_pdf_T * Translations are specified as [1 0 0 1 tx ty ], where tx and ty are the distances to translate the origin of the coordinate system in the horizontal and vertical dimensions, respectively.
+  '_pdf_T * Scaling is obtained by [sx 0 0 sy 0 0]. This scales the coordinates so that 1 unit in the horizontal and vertical dimensions of the new coordinate system is the same size as sx and sy units, respectively, in the previous coordinate system.
+  '_pdf_T * Rotations are produced by [cos \371  sin \371 -sin \371 cos \371 0 0], which has the effect of rotating the coordinate system axes by an angle counterclockwise.
+  '_pdf_t * Skew is specified by [1 tan
+  '_pdf_@F3,14t  \141
+  '_pdf_@F1,14t tan
+  '_pdf_@F3,14t  \142
+  '_pdf_@F1,14T 1 0 0], which skews
+  '_pdf_t the x axis by an angle
+  '_pdf_@F3,14t  \141
+  '_pdf_@F1,14t and the y axis by an angle
+  '_pdf_@F3,14T  \142.
+  '_pdf_T
+  '_pdf_T
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   a-f elements of the matrix.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_T
+
+  '_pdf_E+#40,740@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF SetImageMatrix Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T pdfLoadImage "Icon.png", "Im1"
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T 'Normal Image
+  '_pdf_T pdfPushGraphicsStack
+  '_pdf_T pdfSetImageMatrix 100, 0, 0, 100, 250, 650
+  '_pdf_T pdfPutImage "Im1"
+  '_pdf_T pdfPopGraphicsStack
+  '_pdf_T 'Scaled Image
+  '_pdf_T pdfPushGraphicsStack
+  '_pdf_T pdfSetImageMatrix 200, 0, 0, 200, 200, 400
+  '_pdf_T pdfPutImage "Im1"
+  '_pdf_T pdfPopGraphicsStack
+  '_pdf_T 'Rotated Image
+  '_pdf_T deg! = 45
+  '_pdf_T pdfPushGraphicsStack
+  '_pdf_T pdfSetImageMatrix 100, 0, 0, 100, 300, 225
+  '_pdf_T pdfSetImageMatrix COS(_D2R(deg!)), SIN(_D2R(deg!)), -SIN(_D2R(deg!)), COS(_D2R(deg!)), 0, 0
+  '_pdf_T pdfPutImage "Im1"
+  '_pdf_T pdfPopGraphicsStack
+  '_pdf_T 'Skewed Image
+  '_pdf_T alpha! = 10
+  '_pdf_T beta! = -30
+  '_pdf_T pdfPushGraphicsStack
+  '_pdf_T pdfSetImageMatrix 100, 0, 0, 100, 300, 75
+  '_pdf_T pdfSetImageMatrix 1, TAN(_D2R(alpha!)), TAN(_D2R(beta!)), 1, 0, 0
+  '_pdf_T pdfPutImage "Im1"
+  '_pdf_T pdfPopGraphicsStack
+  '_pdf_T
+  '_pdf_T pdfGen "pdfImageMatrix.pdf"
+  '_pdf_T  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  '_pdf_E
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_SET_IMAGE_MATRIX
+  pdfCommand(ub).mat.a = a
+  pdfCommand(ub).mat.b = b
+  pdfCommand(ub).mat.c = c
+  pdfCommand(ub).mat.d = d
+  pdfCommand(ub).mat.e = e
+  pdfCommand(ub).mat.f = f
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfPutImage (nm AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Places an image on the current page.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T  nm - String with the ID of the image.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF PutImage Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T pdfLoadImage "Icon.png", "Im1"
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T
+  '_pdf_T scaleX! = 100
+  '_pdf_T scaleY! = 100
+  '_pdf_T xP! = 250
+  '_pdf_T yP! = 650
+  '_pdf_T
+  '_pdf_T pdfPushGraphicsStack
+  '_pdf_T pdfSetImageMatrix scaleX!, 0, 0, scaleY!, xP!, yP!
+  '_pdf_T pdfPutImage "Im1"
+  '_pdf_T pdfPopGraphicsStack
+  '_pdf_T
+  '_pdf_T pdfGen "pdfPutImage.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_PUT_IMAGE
+  pdfCommand(ub).s1 = nm
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetFontSize (nm AS STRING, sz AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the current loaded font and size.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   nm - ID of font that was previously loaded.
+  '_pdf_T   sz - size of font
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF SetFontSize Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 50, 750 'Initial position
+  '_pdf_T FOR i& = 0 TO 28
+  '_pdf_T   fSize& = 8 + i&
+  '_pdf_T   pdfSetFontSize "F1", fSize&
+  '_pdf_T   pdfSetLeading fSize&
+  '_pdf_T   pdfAddText "This is fontSize " + STR$(fSize&) + "."
+  '_pdf_T   pdfNextLine
+  '_pdf_T NEXT
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfSetFontSizeExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_SET_FONT_SIZE
+  pdfCommand(ub).s = nm: pdfStates.font_name = nm
+  pdfCommand(ub).argLong1 = sz: pdfStates.font_size = sz
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+  pdfStates.text = True
+  pdfStates.font_set = True
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfBeginPath (x AS LONG, y AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T A path is a set sequential points in which a draw command renders them to the current page. All paths must have a starting point. pdfBeginPath sets the starting point of a path.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   x,y - position of the start of the path
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W90L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF BeginPath Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T xC! = 300
+  '_pdf_T yC! = 350
+  '_pdf_T rad! = 250
+  '_pdf_T deg! = 0
+  '_pdf_T
+  '_pdf_T pdfBeginPath xC! + rad! * SIN(_D2R(deg!)), yC! + rad! * COS(_D2R(deg!))
+  '_pdf_T
+  '_pdf_T FOR i& = 0 TO 249
+  '_pdf_T   deg! = deg! + 91
+  '_pdf_T   rad! = rad! - 1
+  '_pdf_T   pdfAppendLine xC! + rad! * SIN(_D2R(deg!)), yC! + rad! * COS(_D2R(deg!))
+  '_pdf_T NEXT
+  '_pdf_T pdfStrokePath
+  '_pdf_T
+  '_pdf_T pdfGen "pdfBeginPathExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_BEGIN_PATH
+  pdfCommand(ub).argVec1.x = x
+  pdfCommand(ub).argVec1.y = y
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfAppendLine (x1 AS LONG, y1 AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Adds a straight line to previously started path.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   x1,y1 -  Position of the end point of a line
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W90L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF AppendLine Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T xC! = 300
+  '_pdf_T yC! = 350
+  '_pdf_T rad! = 250
+  '_pdf_T deg! = 0
+  '_pdf_T
+  '_pdf_T pdfBeginPath xC! + rad! * SIN(_D2R(deg!)), yC! + rad! * COS(_D2R(deg!))
+  '_pdf_T FOR i& = 0 TO 249
+  '_pdf_T   deg! = deg! + 91
+  '_pdf_T   rad! = rad! - 1
+  '_pdf_T   pdfAppendLine xC! + rad! * SIN(_D2R(deg!)), yC! + rad! * COS(_D2R(deg!))
+  '_pdf_T NEXT
+  '_pdf_T pdfStrokePath
+  '_pdf_T
+  '_pdf_T pdfGen "pdfAppendLineExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_APPEND_LINE
+  pdfCommand(ub).argVec1.x = x1
+  pdfCommand(ub).argVec1.y = y1
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfAppendBezier123 (x1 AS LONG, y1 AS LONG, _
+x2 AS LONG, y2 AS LONG, _
+x3 AS LONG, y3 AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Append a cubic Bezier curve to the current path. The curve extends from the current point to the point (x3 , y3 ), using (x1 , y1 ) and (x2 , y2 ) as the Bezier control points. The new current point is (x3 , y3 )
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   x1,y1 - Control point
+  '_pdf_T   x2,y2 - Control point
+  '_pdf_T   x3,y3 - Final point
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_E+#40,740@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W90L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF AppendBezier123 Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T 'Starting Point
+  '_pdf_T xC! = 300
+  '_pdf_T yC! = 350
+  '_pdf_T 'Control Point 1
+  '_pdf_T cPx1! = xC! - 50
+  '_pdf_T cPy1! = yC! + 200
+  '_pdf_T 'Control Point 2
+  '_pdf_T cPx2! = xC!
+  '_pdf_T cPy2! = yC! + 250
+  '_pdf_T 'Final Point
+  '_pdf_T fNx! = xC! + 200
+  '_pdf_T fNy! = yC! + 200
+  '_pdf_T 'draw Bezier
+  '_pdf_T pdfBeginPath xC!, yC!
+  '_pdf_T pdfAppendBezier123 cPx1!, cPy1!, cPx2!, cPy2!, fNx!, fNy!
+  '_pdf_T pdfStrokePath
+  '_pdf_T 'draw visual aids
+  '_pdf_T pdfRectangle xC! - 2, yC! - 2, 4, 4
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfRectangle fNx! - 2, fNy! - 2, 4, 4
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfRectangle cPx1! - 2, cPy1! - 2, 4, 4
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfRectangle cPx2! - 2, cPy2! - 2, 4, 4
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfBeginPath cPx1!, cPy1!
+  '_pdf_T pdfSetLineDashPattern 2, 2, 0
+  '_pdf_T pdfAppendLine xC!, yC!
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfBeginPath cPx2!, cPy2!
+  '_pdf_T pdfSetLineDashPattern 2, 2, 0
+  '_pdf_T pdfAppendLine fNx!, fNy!
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition xC! - 40, yC - 15!
+  '_pdf_T pdfAddText "Starting Point"
+  '_pdf_T pdfEndText
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition cPx1! - 40, cPy1! + 5
+  '_pdf_T pdfAddText "Control Point 1"
+  '_pdf_T pdfEndText
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition cPx2! - 40, cPy2! + 5
+  '_pdf_T pdfAddText "Control Point 2"
+  '_pdf_T pdfEndText
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition fNx! - 30, fNy! - 15
+  '_pdf_T pdfAddText "End Point"
+  '_pdf_T pdfEndText
+  '_pdf_T pdfGen "pdfAppendBezier123Example.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_APPEND_BEZIER_CURVE_123
+  pdfCommand(ub).argVec1.x = x1
+  pdfCommand(ub).argVec1.y = y1
+  pdfCommand(ub).argVec2.x = x2
+  pdfCommand(ub).argVec2.y = y2
+  pdfCommand(ub).argVec3.x = x3
+  pdfCommand(ub).argVec3.y = y3
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfAppendBezier23 (x2 AS LONG, y2 AS LONG, _
+x3 AS LONG, y3 AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Append a cubic Bezier curve to the current path. The curve extends from the current point to the point (x3, y3), using the point (x2, y2) as the Bezier control points. The new current point is (x3, y3).
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   x2,y2 - control point
+  '_pdf_T   x3,y3 - end point
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_E+#40,740@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF AppendBezier23 Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T 'Starting Point
+  '_pdf_T xC! = 300
+  '_pdf_T yC! = 350
+  '_pdf_T 'Control Point 1
+  '_pdf_T cPx1! = xC! + 50
+  '_pdf_T cPy1! = yC! + 250
+  '_pdf_T 'Final Point
+  '_pdf_T fNx! = xC! + 200
+  '_pdf_T fNy! = yC! + 200
+  '_pdf_T 'draw Bezier
+  '_pdf_T pdfBeginPath xC!, yC!
+  '_pdf_T pdfAppendBezier23 cPx1!, cPy1!, fNx!, fNy!
+  '_pdf_T pdfStrokePath
+  '_pdf_T 'draw visual aids
+  '_pdf_T pdfRectangle xC! - 2, yC! - 2, 4, 4
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfRectangle fNx! - 2, fNy! - 2, 4, 4
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfRectangle cPx1! - 2, cPy1! - 2, 4, 4
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfBeginPath cPx1!, cPy1!
+  '_pdf_T pdfSetLineDashPattern 2, 2, 0
+  '_pdf_T pdfAppendLine fNx!, fNy!
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition xC! - 40, yC - 15!
+  '_pdf_T pdfAddText "Starting Point"
+  '_pdf_T pdfEndText
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition cPx1! - 40, cPy1! + 5
+  '_pdf_T pdfAddText "Control Point"
+  '_pdf_T pdfEndText
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition fNx! - 30, fNy! - 15
+  '_pdf_T pdfAddText "End Point"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfAppendBezier23Example.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_APPEND_BEZIER_CURVE_23
+  pdfCommand(ub).argVec2.x = x2
+  pdfCommand(ub).argVec2.y = y2
+  pdfCommand(ub).argVec3.x = x3
+  pdfCommand(ub).argVec3.y = y3
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfAppendBezier13 (x1 AS LONG, y1 AS LONG, _
+x3 AS LONG, y3 AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Append a cubic Bezier curve to the current path. The curve extends from the current point to the point (x3, y3), using (x1, y1) and (x3, y3) as the Bezier control points. The new current point is (x3, y3).
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   x1,y1 - Control point
+  '_pdf_T   x3,y3 - End Point
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_E+#40,740@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF AppendBezier13 Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T 'Starting Point
+  '_pdf_T xC! = 300
+  '_pdf_T yC! = 350
+  '_pdf_T 'Control Point 1
+  '_pdf_T cPx1! = xC! - 50
+  '_pdf_T cPy1! = yC! + 150
+  '_pdf_T 'Final Point
+  '_pdf_T fNx! = xC! + 200
+  '_pdf_T fNy! = yC! + 200
+  '_pdf_T 'draw Bezier
+  '_pdf_T pdfBeginPath xC!, yC!
+  '_pdf_T pdfAppendBezier13 cPx1!, cPy1!, fNx!, fNy!
+  '_pdf_T pdfStrokePath
+  '_pdf_T 'draw visual aids
+  '_pdf_T pdfRectangle xC! - 2, yC! - 2, 4, 4
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfRectangle fNx! - 2, fNy! - 2, 4, 4
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfRectangle cPx1! - 2, cPy1! - 2, 4, 4
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfBeginPath cPx1!, cPy1!
+  '_pdf_T pdfSetLineDashPattern 2, 2, 0
+  '_pdf_T pdfAppendLine xC!, yC!
+  '_pdf_T pdfStrokePath
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition xC! - 40, yC - 15!
+  '_pdf_T pdfAddText "Starting Point"
+  '_pdf_T pdfEndText
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition cPx1! - 40, cPy1! + 5
+  '_pdf_T pdfAddText "Control Point"
+  '_pdf_T pdfEndText
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 14
+  '_pdf_T pdfSetPosition fNx! - 30, fNy! - 15
+  '_pdf_T pdfAddText "End Point"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfAppendBezier13Example.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_APPEND_BEZIER_CURVE_13
+  pdfCommand(ub).argVec1.x = x1
+  pdfCommand(ub).argVec1.y = y1
+  pdfCommand(ub).argVec3.x = x3
+  pdfCommand(ub).argVec3.y = y3
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfClosePath
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Close the current subpath by appending a straight line segment from the current point to the starting point of the subpath.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF ClosePath Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T xC! = 300
+  '_pdf_T yC! = 350
+  '_pdf_T pdfBeginPath xC! + 5, yC! 'Start the path
+  '_pdf_T pdfAppendLine xC! + 100, yC! + 100 'Points along the path
+  '_pdf_T pdfAppendLine xC! + 100, yC! - 100 'Points along the path
+  '_pdf_T pdfClosePath 'close path to the start
+  '_pdf_T
+  '_pdf_T pdfBeginPath xC! - 5, yC! 'Start the path
+  '_pdf_T pdfAppendLine xC! - 100, yC! - 100 'Points along the path
+  '_pdf_T pdfAppendLine xC! - 100, yC! + 100 'Points along the path
+  '_pdf_T pdfClosePath 'close path to the start
+  '_pdf_T
+  '_pdf_T pdfStrokePath ' Path is not drawn until now
+  '_pdf_T
+  '_pdf_T pdfGen "pdfClosePathExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_CLOSE_PATH
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfRectangle (x AS LONG, y AS LONG, _
+w AS LONG, h AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Append a rectangle to the current path as a complete subpath, with lower-left corner (x, y) and dimensions width and height in user space.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   x,y - lower-left corner
+  '_pdf_T   w,h - width and height
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF Rectangle Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T xC! = 150
+  '_pdf_T yC! = 350
+  '_pdf_T w! = 300
+  '_pdf_T h! = 300
+  '_pdf_T
+  '_pdf_T pdfSetStrokeWidth 4
+  '_pdf_T FOR i& = 0 TO 100 STEP 10
+  '_pdf_T   pdfRectangle xC! + i&, yC! + i&, w! - (i& * 2), h! - (i& * 2)
+  '_pdf_T   pdfStrokePath
+  '_pdf_T NEXT
+  '_pdf_T
+  '_pdf_T pdfGen "pdfRectangleExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_RECTANGLE
+  pdfCommand(ub).argVec1.x = x
+  pdfCommand(ub).argVec1.y = y
+  pdfCommand(ub).argVec2.x = w
+  pdfCommand(ub).argVec2.y = h
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfStrokePath
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Stroke the previously created path. It does not close the path. Subsequent path operations will continue from the last path operation.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T  None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_E+#40,740@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W100L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF General Path Showcase Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfSetStrokeWidth 4
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 18
+  '_pdf_T pdfSetPosition 100, 710
+  '_pdf_T pdfAddText "StrokePath Example (Does not close shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfBeginPath 100, 700
+  '_pdf_T pdfAppendLine 500, 700
+  '_pdf_T pdfAppendLine 500, 650
+  '_pdf_T pdfAppendLine 100, 650
+  '_pdf_T pdfStrokePath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 610
+  '_pdf_T pdfAddText "CloseStrokePath Example (Closes shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfBeginPath 100, 600
+  '_pdf_T pdfAppendLine 500, 600
+  '_pdf_T pdfAppendLine 500, 550
+  '_pdf_T pdfAppendLine 100, 550
+  '_pdf_T pdfCloseStrokePath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 510
+  '_pdf_T pdfAddText "FillPath Example (Fills shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfSetStrokeWidth 1
+  '_pdf_T rad! = 75: xc! = 300: yc! = 420
+  '_pdf_T star rad!, xc!, yc!
+  '_pdf_T pdfFillPath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 300
+  '_pdf_T pdfAddText "FillEO Example (Fills Even Odd Shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T rad! = 75: xc! = 300: yc! = 200
+  '_pdf_T star rad!, xc!, yc!
+  '_pdf_T pdfFillEO
+  '_pdf_T
+  '_pdf_T pdfGen "pdfPathShowcaseExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  '_pdf_T SUB star (rad!, xc!, yc!)
+  '_pdf_T   pdfBeginPath xc! + rad! * SIN(0), yc! + rad! * COS(0)
+  '_pdf_T   FOR i! = 1 TO 5
+  '_pdf_T   pdfAppendLine xc! + rad! * SIN(_D2R(i! * 144)), yc! + rad! * COS(_D2R(i! * 144))
+  '_pdf_T   NEXT
+  '_pdf_T END SUB
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_STROKE_PATH
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfCloseStrokePath
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Stroke the previously created path and closes the path.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_E+#40,740@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W100L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF General Path Showcase Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfSetStrokeWidth 4
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 18
+  '_pdf_T pdfSetPosition 100, 710
+  '_pdf_T pdfAddText "StrokePath Example (Does not close shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfBeginPath 100, 700
+  '_pdf_T pdfAppendLine 500, 700
+  '_pdf_T pdfAppendLine 500, 650
+  '_pdf_T pdfAppendLine 100, 650
+  '_pdf_T pdfStrokePath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 610
+  '_pdf_T pdfAddText "CloseStrokePath Example (Closes shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfBeginPath 100, 600
+  '_pdf_T pdfAppendLine 500, 600
+  '_pdf_T pdfAppendLine 500, 550
+  '_pdf_T pdfAppendLine 100, 550
+  '_pdf_T pdfCloseStrokePath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 510
+  '_pdf_T pdfAddText "FillPath Example (Fills shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfSetStrokeWidth 1
+  '_pdf_T rad! = 75: xc! = 300: yc! = 420
+  '_pdf_T star rad!, xc!, yc!
+  '_pdf_T pdfFillPath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 300
+  '_pdf_T pdfAddText "FillEO Example (Fills Even Odd Shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T rad! = 75: xc! = 300: yc! = 200
+  '_pdf_T star rad!, xc!, yc!
+  '_pdf_T pdfFillEO
+  '_pdf_T
+  '_pdf_T pdfGen "pdfPathShowcaseExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  '_pdf_T SUB star (rad!, xc!, yc!)
+  '_pdf_T   pdfBeginPath xc! + rad! * SIN(0), yc! + rad! * COS(0)
+  '_pdf_T   FOR i! = 1 TO 5
+  '_pdf_T   pdfAppendLine xc! + rad! * SIN(_D2R(i! * 144)), yc! + rad! * COS(_D2R(i! * 144))
+  '_pdf_T   NEXT
+  '_pdf_T END SUB
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_CLOSE_AND_STROKE
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfFillPath
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Fill the path, using the nonzero winding number rule to determine the region to fill. Any subpaths that are open are implicitly closed before being filled.
+  '_pdf_T
+  '_pdf_@F2,14W60L16T Nonzero Winding Number Rule :
+  '_pdf_T
+  '_pdf_@F1,14W60L16T The nonzero winding number rule determines whether a given point is inside a path by conceptually drawing a ray from that point to infinity in any direction and then examining the places where a segment of the path crosses the ray. Starting with a count of 0, the rule adds 1 each time a path segment crosses the ray from left to right and subtracts 1 each time a segment crosses from right to left. After counting all the crossings, if the result is 0, the point is outside the path; otherwise, it is inside.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_E+#40,740@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W100L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF General Path Showcase Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfSetStrokeWidth 4
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 18
+  '_pdf_T pdfSetPosition 100, 710
+  '_pdf_T pdfAddText "StrokePath Example (Does not close shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfBeginPath 100, 700
+  '_pdf_T pdfAppendLine 500, 700
+  '_pdf_T pdfAppendLine 500, 650
+  '_pdf_T pdfAppendLine 100, 650
+  '_pdf_T pdfStrokePath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 610
+  '_pdf_T pdfAddText "CloseStrokePath Example (Closes shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfBeginPath 100, 600
+  '_pdf_T pdfAppendLine 500, 600
+  '_pdf_T pdfAppendLine 500, 550
+  '_pdf_T pdfAppendLine 100, 550
+  '_pdf_T pdfCloseStrokePath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 510
+  '_pdf_T pdfAddText "FillPath Example (Fills shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfSetStrokeWidth 1
+  '_pdf_T rad! = 75: xc! = 300: yc! = 420
+  '_pdf_T star rad!, xc!, yc!
+  '_pdf_T pdfFillPath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 300
+  '_pdf_T pdfAddText "FillEO Example (Fills Even Odd Shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T rad! = 75: xc! = 300: yc! = 200
+  '_pdf_T star rad!, xc!, yc!
+  '_pdf_T pdfFillEO
+  '_pdf_T
+  '_pdf_T pdfGen "pdfPathShowcaseExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  '_pdf_T SUB star (rad!, xc!, yc!)
+  '_pdf_T   pdfBeginPath xc! + rad! * SIN(0), yc! + rad! * COS(0)
+  '_pdf_T   FOR i! = 1 TO 5
+  '_pdf_T   pdfAppendLine xc! + rad! * SIN(_D2R(i! * 144)), yc! + rad! * COS(_D2R(i! * 144))
+  '_pdf_T   NEXT
+  '_pdf_T END SUB
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_FILL_PATH
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfFillEO
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Fill the path, using the even-odd rule to determine the region to fill.
+  '_pdf_T
+  '_pdf_@F2,14W60L16T Even-Odd Rule :
+  '_pdf_T
+  '_pdf_@F1,14W60L16T An alternative to the nonzero winding number rule is the even-odd rule. This rule determines whether a point is inside a path by drawing a ray from that point in any direction and simply counting the number of path segments that cross the ray, regardless of direction. If this number is odd, the point is inside; if even, the point is outside. This yields the same results as the nonzero winding number rule for paths with simple shapes, but produces different results for more complex shapes.
+  '_pdf_T
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_E+#40,740@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W100L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF General Path Showcase Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfSetStrokeWidth 4
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 18
+  '_pdf_T pdfSetPosition 100, 710
+  '_pdf_T pdfAddText "StrokePath Example (Does not close shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfBeginPath 100, 700
+  '_pdf_T pdfAppendLine 500, 700
+  '_pdf_T pdfAppendLine 500, 650
+  '_pdf_T pdfAppendLine 100, 650
+  '_pdf_T pdfStrokePath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 610
+  '_pdf_T pdfAddText "CloseStrokePath Example (Closes shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfBeginPath 100, 600
+  '_pdf_T pdfAppendLine 500, 600
+  '_pdf_T pdfAppendLine 500, 550
+  '_pdf_T pdfAppendLine 100, 550
+  '_pdf_T pdfCloseStrokePath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 510
+  '_pdf_T pdfAddText "FillPath Example (Fills shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfSetStrokeWidth 1
+  '_pdf_T rad! = 75: xc! = 300: yc! = 420
+  '_pdf_T star rad!, xc!, yc!
+  '_pdf_T pdfFillPath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 300
+  '_pdf_T pdfAddText "FillEO Example (Fills Even Odd Shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T rad! = 75: xc! = 300: yc! = 200
+  '_pdf_T star rad!, xc!, yc!
+  '_pdf_T pdfFillEO
+  '_pdf_T
+  '_pdf_T pdfGen "pdfPathShowcaseExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  '_pdf_T SUB star (rad!, xc!, yc!)
+  '_pdf_T   pdfBeginPath xc! + rad! * SIN(0), yc! + rad! * COS(0)
+  '_pdf_T   FOR i! = 1 TO 5
+  '_pdf_T   pdfAppendLine xc! + rad! * SIN(_D2R(i! * 144)), yc! + rad! * COS(_D2R(i! * 144))
+  '_pdf_T   NEXT
+  '_pdf_T END SUB
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_FILL_EO
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfFillStroke
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Place Holder Text.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T  None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_E+#40,740@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W100L10T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T pdfSetTitle "PDF General Path Showcase Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfSetStrokeWidth 4
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 18
+  '_pdf_T pdfSetPosition 100, 710
+  '_pdf_T pdfAddText "StrokePath Example (Does not close shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfBeginPath 100, 700
+  '_pdf_T pdfAppendLine 500, 700
+  '_pdf_T pdfAppendLine 500, 650
+  '_pdf_T pdfAppendLine 100, 650
+  '_pdf_T pdfStrokePath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 610
+  '_pdf_T pdfAddText "CloseStrokePath Example (Closes shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfBeginPath 100, 600
+  '_pdf_T pdfAppendLine 500, 600
+  '_pdf_T pdfAppendLine 500, 550
+  '_pdf_T pdfAppendLine 100, 550
+  '_pdf_T pdfCloseStrokePath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 510
+  '_pdf_T pdfAddText "FillPath Example (Fills shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfSetStrokeWidth 1
+  '_pdf_T rad! = 75: xc! = 300: yc! = 420
+  '_pdf_T star rad!, xc!, yc!
+  '_pdf_T pdfFillPath
+  '_pdf_T
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetPosition 100, 300
+  '_pdf_T pdfAddText "FillEO Example (Fills Even Odd Shape)"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T rad! = 75: xc! = 300: yc! = 200
+  '_pdf_T star rad!, xc!, yc!
+  '_pdf_T pdfFillEO
+  '_pdf_T
+  '_pdf_T pdfGen "pdfPathShowcaseExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  '_pdf_T SUB star (rad!, xc!, yc!)
+  '_pdf_T   pdfBeginPath xc! + rad! * SIN(0), yc! + rad! * COS(0)
+  '_pdf_T   FOR i! = 1 TO 5
+  '_pdf_T   pdfAppendLine xc! + rad! * SIN(_D2R(i! * 144)), yc! + rad! * COS(_D2R(i! * 144))
+  '_pdf_T   NEXT
+  '_pdf_T END SUB
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_FILL_STROKE
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfFillStrokeEO
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Fill the path, using the even-odd rule to determine the region to fill.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_FILL_STROKE_EO
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfCloseFillStroke
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Close, fill, and then stroke the path, using the nonzero winding number rule to determine the region to fill.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_CLOSE_FILL_STROKE
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfCloseFillStrokeEO
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Close, fill, and then stroke the path, using the even-odd rule to determine the region to fill.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_CLOSE_FILL_STROKE_EO
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfEndPath
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T End the path object without filling or stroking it. This operator is a "path-painting no-op," used primarily for the side effect of changing the current clipping path.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_END_PATH
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetColorStroke (r AS SINGLE, _
+g AS SINGLE, _
+b AS SINGLE)
+  '_pdf_)
+  '_pdf_@F1,14W60L14
+  '_pdf_T
+  '_pdf_T Set the RGB color of the stroke. Values are between 0.0 - 1.0
+  '_pdf_T
+  '_pdf_@F2,14W60L14TParameters
+  '_pdf_@F1,14W60L14T
+  '_pdf_T   r,g,b - 0.0 to 1.0 (0.0 is dark and 1.0 is bright)
+  '_pdf_T
+  '_pdf_@F2,14W60L14TReturns
+  '_pdf_@F1,14W60L14T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L14TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_SET_COLOR_STROKE
+  pdfCommand(ub).argSingle1 = r
+  pdfCommand(ub).argSingle2 = g
+  pdfCommand(ub).argSingle3 = b
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetColorNonStroke (r AS SINGLE, _
+g AS SINGLE, _
+b AS SINGLE)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Set the RGB color of the non-stroke operations such as fill. Values are between 0.0 - 1.0
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_SET_COLOR_NONSTROKE
+  pdfCommand(ub).argSingle1 = r
+  pdfCommand(ub).argSingle2 = g
+  pdfCommand(ub).argSingle3 = b
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfPushGraphicsStack
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T A well-structured PDF document typically contains many graphical elements that are essentially independent of each other and sometimes nested to multiple levels. The graphics state stack allows these elements to make local changes to the graphics state without disturbing the graphics state of the surrounding environment. The stack is a LIFO (last in, first out) data structure in which the contents of the graphics state can be saved and later restored.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_PUSH_GRAPHIC_STACK
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfPopGraphicsStack
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T A well-structured PDF document typically contains many graphical elements that are essentially independent of each other and sometimes nested to multiple levels. The graphics state stack allows these elements to make local changes to the graphics state without disturbing the graphics state of the surrounding environment. The stack is a LIFO (last in, first out) data structure in which the contents of the graphics state can be saved and later restored.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   None.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_POP_GRAPHIC_STACK
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfMediaBox (x AS LONG,  y AS LONG, _
+x1 AS LONG, y1 AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T  The media box defines the boundaries of the physical medium on which the page is to be printed. It may include any extended area surrounding the finished page for bleed, printing marks, or other such purposes. Must be done before page is added.
+  '_pdf_T  The default values are 0,0,612,792. Changing the media box will automatically set the crop box to the same values.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   x,y - lower left corner
+  '_pdf_T   x1,y1 - upper right corner
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11T
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF MediaBox Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T pdfMediaBox 0, 0, 2048, 600
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 24
+  '_pdf_T pdfSetPosition 900, 500
+  '_pdf_T pdfAddText "Wide Page"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfMediaBox 0, 0, 600, 2048
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 24
+  '_pdf_T pdfSetPosition 270, 1948
+  '_pdf_T pdfAddText "Long Page"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfMediaBox.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+
+  pdfDefault.mediaBox.a.x = x
+  pdfDefault.mediaBox.a.y = y
+  pdfDefault.mediaBox.b.x = x1
+  pdfDefault.mediaBox.b.y = y1
+
+  pdfDefault.cropBox.a.x = x
+  pdfDefault.cropBox.a.y = y
+  pdfDefault.cropBox.b.x = x1
+  pdfDefault.cropBox.b.y = y1
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfCropBox (x AS LONG,  y AS LONG, _
+x1 AS LONG, y1 AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T  The crop box defines the region to which the contents of the page are to be clipped (cropped) when displayed or printed. Unlike the other boxes, the crop box has no defined meaning in terms of physical page geometry or intended use; it merely imposes clipping on the page contents. Must be done before page is added.
+  '_pdf_T  The default values are 0,0,612,792.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   x,y - lower left corner
+  '_pdf_T   x1,y1 - upper right corner
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF CropBox Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 100
+  '_pdf_T pdfSetPosition 25, 350
+  '_pdf_T pdfAddText "Cropped Text"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfCropBox 100, 100, 512, 692
+  '_pdf_T
+  '_pdf_T pdfAddPage
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 100
+  '_pdf_T pdfSetPosition 25, 350
+  '_pdf_T pdfAddText "Cropped Text"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfCropBox.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  pdfDefault.cropBox.a.x = x
+  pdfDefault.cropBox.a.y = y
+  pdfDefault.cropBox.b.x = x1
+  pdfDefault.cropBox.b.y = y1
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetImageDevice (imdev AS _UNSIGNED _BYTE)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the current image device. Specifying colors in a device color space (DeviceGray, DeviceRGB, or DeviceCMYK) makes them device-dependent. By setting default color spaces (PDF 1.1), a PDF document can request that such colors be systematically transformed (remapped) into device-independent CIE-based color spaces.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T  imdev - PDF_IMAGE_DEVICE_GRAY, PDF_IMAGE_DEVICE_RGB, or PDF_IMAGE_DEVICE_CMYK  are valid contants.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  pdfDefault.imageDevice = imdev
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfLoadImage (f AS STRING, nm AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T  Loads an image and prepares it for use in the document.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T  f - Filename of image
+  '_pdf_T  nm - ID of image to be used later
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+  IF NOT _FILEEXISTS(f) THEN PRINT "Image "; f; " was not loaded!!!!! Check file path.": END
+  DIM AS LONG ub
+  ub = UBOUND(pdfImage)
+  pdfImage(ub).IMG = _LOADIMAGE(f, 32)
+  IF pdfImage(ub).IMG >= -1 THEN
+    $IF PDFLOG = TRUE THEN
+      PRINT #pdflogfile, "Image "; f; " was not loaded!!!!! Check file path."
+    $END IF
+  ELSE
+    $IF PDFLOG = TRUE THEN
+      PRINT #pdflogfile, "Image "; f; " was successfully loaded! Handle returned was "; pdfImage(ub).IMG; "."
+      PRINT #pdflogfile, "Image internal handle is "; nm; " using "; pdfImage(ub).imageDevice; " image device."
+    $END IF
+  END IF
+
+  pdfImage(ub).nm = nm
+  pdfImage(ub).imageDevice = pdfDefault.imageDevice
+  IF pdfImage(ub).IMG < -1 THEN
+    REDIM _PRESERVE pdfImage(ub + 1) AS tPDFIMAGE
+    pdfStates.imgCount = pdfStates.imgCount + 1
+    IF pdfDefault.imageDevice = PDF_IMAGE_DEVICE_GRAY THEN
+      pdfStates.proc = pdfStates.proc OR PDF_PROC_IMAGEB
+    ELSE
+      pdfStates.proc = pdfStates.proc OR PDF_PROC_IMAGEC
+    END IF
+  END IF
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetTitle (s AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the title of the pdf. Depending on the viewer It can be seen in the properties of the pdf.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   s - Title
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  pdfDefault.info.title = escapeSeq(s)
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetSubject (s AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the subject of the pdf. Depending on the viewer It can be seen in the properties of the pdf.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   s - Subject
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  pdfDefault.info.subject = escapeSeq(s)
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetAuthor (s AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the author of the pdf. Depending on the viewer It can be seen in the properties of the pdf.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   s - Author.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  pdfDefault.info.author = escapeSeq(s)
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetKeywords (s AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the keywords of the pdf. Depending on the viewer It can be seen in the properties of the pdf.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   s - Keywords.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  pdfDefault.info.keywords = escapeSeq(s)
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetCreator (s AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the creator of the pdf. Depending on the viewer It can be seen in the properties of the pdf.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   s - Creator.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  pdfDefault.info.creator = escapeSeq(s)
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetProducer (s AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Sets the producer of the pdf. Depending on the viewer It can be seen in the properties of the pdf.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   s - producer.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  pdfDefault.info.producer = escapeSeq(s)
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetLineCapStyle (c AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T The line cap style specifies the shape to be used at the ends of open subpaths (and dashes, if any) when they are stroked.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T  c - PDF_LINE_CAP_BUTT, PDF_LINE_CAP_ROUND, or PDF_LINE_CAP_PROJECTING_SQUARE
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_LINE_CAP_STYLE
+  pdfCommand(ub).argLong1 = c
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetLineJoinStyle (c AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T The line join style specifies the shape to be used at the corners of paths that are stroked.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   c - PDF_LINE_JOIN_MITER, PDF_LINE_JOIN_ROUND, or PDF_LINE_JOIN_BEVEL
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_LINE_JOIN_STYLE
+  pdfCommand(ub).argLong1 = c
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetLineDashPattern (ondash AS LONG, offdash AS LONG, phase AS LONG)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T The line dash pattern controls the pattern of dashes and gaps used to stroke paths. It is specified by a dash array and a dash phase. The dash array's elements are numbers that specify the lengths of alternating dashes and gaps; the dash phase specifies the distance into the dash pattern at which to start the dash. The elements of both the dash array and the dash phase are expressed in user space units.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   ondash - number of units ON
+  '_pdf_T   offdash - number of units OFF
+  '_pdf_T   phase - units of offset
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  DIM AS LONG ub
+  ub = UBOUND(pdfCommand)
+  pdfCommand(ub).command = PDF_COMM_LINE_DASH_PATTERN
+  pdfCommand(ub).argLong1 = ondash
+  pdfCommand(ub).argLong2 = offdash
+  pdfCommand(ub).argLong3 = phase
+  REDIM _PRESERVE pdfCommand(ub + 1) AS tPDFCOMMAND
+END SUB
+
+'======================================================================================================================================
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfGen (filename AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Generates the PDF document.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T  Filename - string
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   PDF file.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L10T
+
+  '_pdf_EG'pdfGenDocs.pdf'
+
+  DIM AS LONG i, pageCount, fontCount, catalogObj, outlineObj, imgObj, infoObj
+  DIM AS LONG pgs, pg, content, procObj, fnt, xref, trailer
+  DIM AS LONG cnt, xrs, xrefStart, eoff, fln
+  DIM AS STRING textStream, mediaBox, cropBox
+  DIM AS STRING resString, b
+
+
+
+  pageCount = UBOUND(pdfPage) - 1
+  fontCount = UBOUND(pdfFont) - 1
+  DIM AS LONG pageKids(pageCount)
+  $IF PDFLOG = TRUE THEN
+    PRINT #pdflogfile, "Page Count:"; pageCount
+    PRINT #pdflogfile, "Font Count:"; fontCount
+    PRINT #pdflogfile, "Image Count:"; pdfStates.imgCount
+  $END IF
+
+
+  catalogObj = pdfAddObject(PDF_OBJECT_TYPE_CATALOG)
+  outlineObj = pdfAddObject(PDF_OBJECT_TYPE_OUTLINES)
+
+  infoObj = pdfAddObject(PDF_OBJECT_TYPE_INFO)
+  pdfObject(infoObj).objectString = PDF_ADD_OBJECT_PRE("", infoObj, 0)
+  pdfObject(infoObj).objectString = PDF_ADD_DOCUMENT_INFO$(pdfObject(infoObj).objectString)
+  pdfObject(infoObj).objectString = PDF_ADD_OBJECT_POST$(pdfObject(infoObj).objectString)
+
+  procObj = pdfAddObject(PDF_OBJECT_TYPE_PROCEDURE)
+  pgs = pdfAddObject(PDF_OBJECT_TYPE_PAGES)
+
+  pdfObject(catalogObj).arg1 = pdfObject(catalogObj).arg1 + trimV$(pgs) + " 0 R "
+  pdfObject(catalogObj).arg2 = pdfObject(catalogObj).arg2 + trimV$(outlineObj) + " 0 R "
+
+  pdfObject(catalogObj).objectString = PDF_ADD_OBJECT_PRE("", catalogObj, 0)
+  pdfObject(catalogObj).objectString = PDF_ADD_CATALOG$(pdfObject(catalogObj).objectString, pdfObject(catalogObj).arg1, pdfObject(catalogObj).arg2)
+  pdfObject(catalogObj).objectString = PDF_ADD_OBJECT_POST$(pdfObject(catalogObj).objectString)
+
+  pdfObject(outlineObj).objectString = PDF_ADD_OBJECT_PRE("", outlineObj, 0)
+  pdfObject(outlineObj).objectString = PDF_ADD_OUTLINES$(pdfObject(outlineObj).objectString)
+  pdfObject(outlineObj).objectString = PDF_ADD_OBJECT_POST$(pdfObject(outlineObj).objectString)
+
+  pdfObject(procObj).objectString = PDF_ADD_OBJECT_PRE("", procObj, 0)
+  pdfObject(procObj).objectString = PDF_ADD_PROC$(pdfObject(procObj).objectString, pdfStates.proc)
+  pdfObject(procObj).objectString = PDF_ADD_OBJECT_POST$(pdfObject(procObj).objectString)
+
+  FOR i = 1 TO pdfStates.imgCount
+    imgObj = pdfAddObject(PDF_OBJECT_TYPE_IMAGE)
+    pdfImage(i).obj = imgObj
+    pdfObject(imgObj).arg1 = pdfImage(i).nm
+    pdfObject(imgObj).objectString = PDF_ADD_OBJECT_PRE("", imgObj, 0)
+    pdfObject(imgObj).objectString = PDF_ADD_IMAGE$(pdfObject(imgObj).objectString, i)
+    pdfObject(imgObj).objectString = PDF_ADD_OBJECT_POST$(pdfObject(imgObj).objectString)
+  NEXT
+
+  FOR i = 1 TO pageCount
+    pg = pdfAddObject(PDF_OBJECT_TYPE_PAGE)
+    content = pdfAddObject(PDF_OBJECT_TYPE_CONTENT)
+
+    pageKids(i) = pg ' store the page objects, so that we can possibly rearrange later
+
+    pdfObject(pg).arg1 = pdfObject(pg).arg1 + trimV$(content) + " 0 R " 'Content
+    pdfObject(pg).arg2 = pdfObject(pg).arg2 + trimV$(pgs) + " 0 R " 'Parent
+    pdfObject(pg).arg4 = pdfObject(pg).arg4 + trimV$(procObj) + " 0 R " 'Procset
+    pdfObject(pg).pageNumber = i
+    pdfObject(content).pageNumber = i
+    pdfPage(i).object = content
+    $IF PDFLOG = TRUE THEN
+      PRINT #pdflogfile, "pg:"; i; "    LL:"; pdfPage(i).ll.parent; "   "; pdfPage(i).ll.child
+    $END IF
+  NEXT
+
+  ' Perhaps add the ability to insert pages in pdfObject(pgs).arg1, so
+  ' late coming pages can be put in the list in any order
+  FOR i = 1 TO pageCount
+    pdfObject(pgs).arg1 = pdfObject(pgs).arg1 + trimV$(pageKids(i)) + " 0 R " ' Fill in the kids for pages
+  NEXT
+
+  pdfObject(pgs).objectString = PDF_ADD_OBJECT_PRE("", pgs, 0)
+  pdfObject(pgs).objectString = PDF_ADD_PAGES(pdfObject(pgs).objectString, pageCount, pdfObject(pgs).arg1)
+  pdfObject(pgs).objectString = PDF_ADD_OBJECT_POST$(pdfObject(pgs).objectString)
+
+  resString = ""
+
+  FOR i = 1 TO fontCount
+    fnt = pdfAddObject(PDF_OBJECT_TYPE_FONT)
+    pdfObject(fnt).arg1 = pdfObject(fnt).arg1 + pdfFont(i).font_name
+    pdfObject(fnt).arg2 = pdfObject(fnt).arg2 + pdfFont(i).font
+    pdfObject(fnt).objectString = PDF_ADD_OBJECT_PRE("", fnt, 0) + _
+                                  PDF_ADD_FONT$("", pdfObject(fnt).arg1, pdfObject(fnt).arg2, pdffont(i).encoding) + _
+                                  PDF_ADD_OBJECT_POST$("")
+    resString = resString + "/" + pdfFont(i).font_name + " " + trimV$(fnt) + " 0 R" + CHR$(13)
+  NEXT
+
+  FOR i = 1 TO UBOUND(pdfObject) - 1
+    IF pdfObject(i).obtype = PDF_OBJECT_TYPE_PAGE THEN
+      mediabox = trimV(pdfPage(pdfObject(i).pageNumber).mediaBox.a.x) + " " _
+               + trimV(pdfPage(pdfObject(i).pageNumber).mediaBox.a.y) + " " _
+               + trimV(pdfPage(pdfObject(i).pageNumber).mediaBox.b.x) + " " _
+               + trimV(pdfPage(pdfObject(i).pageNumber).mediaBox.b.y)
+      cropbox  = trimV(pdfPage(pdfObject(i).pageNumber).cropBox.a.x) + " " _
+               + trimV(pdfPage(pdfObject(i).pageNumber).cropBox.a.y) + " " _
+               + trimV(pdfPage(pdfObject(i).pageNumber).cropBox.b.x) + " " _
+               + trimV(pdfPage(pdfObject(i).pageNumber).cropBox.b.y)
+
+      pdfObject(i).arg3 = resString
+      pdfObject(i).objectString = PDF_ADD_OBJECT_PRE("", i, 0)
+      pdfObject(i).objectString = PDF_ADD_PAGE$(pdfObject(i).objectString, pdfObject(i).arg2, pdfObject(i).arg3, pdfObject(i).arg4, pdfObject(i).arg1, mediaBox, cropBox)
+      pdfObject(i).objectString = PDF_ADD_OBJECT_POST$(pdfObject(i).objectString)
+    END IF
+  NEXT
+
+  '------------------------------------------------------------------------
+  textStream = ""
+  FOR i = 0 TO UBOUND(pdfCommand) - 1
+    SELECT CASE pdfCommand(i).command
+      CASE PDF_COMM_BEGIN_TEXT
+        textStream = textStream + PDF_BEGIN_TEXT_OPERATOR + CHR$(13)
+      CASE PDF_COMM_END_TEXT
+        textStream = textStream + PDF_END_TEXT_OPERATOR + CHR$(13)
+      CASE PDF_COMM_ADD_PAGE
+        pdfObject(pdfPage(pdfStates.current_page).object).objectString = PDF_ADD_OBJECT_PRE("", pdfPage(pdfStates.current_page).object, 0) + PDF_ADD_PAGE_CONTENT$("", textStream) + PDF_ADD_OBJECT_POST$("")
+        pdfStates.current_page = pdfStates.current_page + 1
+        textStream = ""
+      CASE PDF_COMM_SET_POSITION
+        textStream = textStream + trimV(pdfCommand(i).argVec1.x) + " " + trimV(pdfCommand(i).argVec1.y) + " Td" + CHR$(13)
+      CASE PDF_COMM_TEXT
+        'Put pdfVar values into string now
+        ' Per spec a line cannot exceed 256 characters, unless it is a compressed stream
+        IF LEN(pdfCommand(i).s) > 240 THEN pdfCommand(i).s = LEFT$(pdfCommand(i).s, 240)
+        textStream = textStream + " (" + pdfCommand(i).s + ") Tj" + CHR$(13)
+      CASE PDF_COMM_TEXT_BLOCK
+        'Put pdfVar values into string now
+        DIM AS STRING tempStr: tempStr = pdfCommand(i).s
+        DIM AS STRING lf
+        DIM AS LONG ln, sp, lc
+        lc = 0
+        DO
+          ln = _IIF(LEN(tempStr) > pdfCommand(i).argLong1, pdfCommand(i).argLong1, LEN(tempStr))
+          sp = _INSTRREV(ln, tempStr, " ")
+          IF sp > 0 AND LEN(tempStr) > pdfCommand(i).argLong1 THEN ln = sp
+          lf = LEFT$(tempStr, ln)
+          tempStr = MID$(tempStr, ln + 1)
+          IF lc = 0 THEN
+            textStream = textStream + " (" + lf + ") Tj" + CHR$(13)
+          ELSE
+            textStream = textStream + "T* (" + lf + ") Tj" + CHR$(13)
+          END IF
+          lc = lc + 1
+        LOOP WHILE LEN(tempStr) > 0
+      CASE PDF_COMM_SET_FONT_SIZE
+        textStream = textStream + "/" + pdfCommand(i).s + " " + trimV(pdfCommand(i).argLong1) + " Tf" + CHR$(13)
+      CASE PDF_COMM_SET_MATRIX
+        textStream = textStream + trimV(fixDecNot!(pdfCommand(i).mat.a)) + " " + _
+                                  trimV(fixDecNot!(pdfCommand(i).mat.b)) + " " + _
+                                  trimV(fixDecNot!(pdfCommand(i).mat.c)) + " " + _
+                                  trimV(fixDecNot!(pdfCommand(i).mat.d)) + " " + _
+                                  trimV(fixDecNot!(pdfCommand(i).mat.e)) + " " + _
+                                  trimV(fixDecNot!(pdfCommand(i).mat.f)) + " Tm" + CHR$(13)
+      CASE PDF_COMM_SET_IMAGE_MATRIX
+        textStream = textStream + trimV(fixDecNot!(pdfCommand(i).mat.a)) + " " + _
+                                  trimV(fixDecNot!(pdfCommand(i).mat.b)) + " " + _
+                                  trimV(fixDecNot!(pdfCommand(i).mat.c)) + " " + _
+                                  trimV(fixDecNot!(pdfCommand(i).mat.d)) + " " + _
+                                  trimV(fixDecNot!(pdfCommand(i).mat.e)) + " " + _
+                                  trimV(fixDecNot!(pdfCommand(i).mat.f)) + " cm" + CHR$(13)
+      CASE PDF_COMM_TEXT_RENDER_MODE
+        textStream = textStream + trimV(pdfCommand(i).argLong1) + " Tr" + CHR$(13)
+      CASE PDF_COMM_GRAYSCALE_STROKE
+        textStream = textStream + trimV(fixDecNot!(pdfCommand(i).argSingle1)) + " G" + CHR$(13)
+      CASE PDF_COMM_GRAYSCALE_NONSTROKE
+        textStream = textStream + trimV(fixDecNot!(pdfCommand(i).argSingle1)) + " g" + CHR$(13)
+      CASE PDF_COMM_STROKE_WIDTH
+        textStream = textStream + trimV(fixDecNot!(pdfCommand(i).argSingle1)) + " w" + CHR$(13)
+      CASE PDF_COMM_HORIZONTAL_SCALE
+        textStream = textStream + trimV(pdfCommand(i).argLong1) + " Tz" + CHR$(13)
+      CASE PDF_COMM_CHARACTER_SPACING
+        textStream = textStream + trimV(fixDecNot!(pdfCommand(i).argSingle1)) + " Tc" + CHR$(13)
+      CASE PDF_COMM_WORD_SPACING
+        textStream = textStream + trimV(fixDecNot!(pdfCommand(i).argSingle1)) + " Tw" + CHR$(13)
+      CASE PDF_COMM_TEXT_LEADING
+        textStream = textStream + trimV(fixDecNot!(pdfCommand(i).argSingle1)) + " TL" + CHR$(13)
+      CASE PDF_COMM_TEXT_RISE
+        textStream = textStream + trimV(fixDecNot!(pdfCommand(i).argSingle1)) + " Ts" + CHR$(13)
+      CASE PDF_COMM_NEXT_LINE
+        textStream = textStream + " T* "
+      CASE PDF_COMM_BEGIN_PATH
+        textStream = textStream + trimV(pdfCommand(i).argVec1.x) + " " + trimV(pdfCommand(i).argVec1.y) + " m" + CHR$(13)
+      CASE PDF_COMM_APPEND_LINE
+        textStream = textStream + trimV(pdfCommand(i).argVec1.x) + " " + trimV(pdfCommand(i).argVec1.y) + " l" + CHR$(13)
+      CASE PDF_COMM_APPEND_BEZIER_CURVE_123
+        textStream = textStream + trimV(pdfCommand(i).argVec1.x) + " " + trimV(pdfCommand(i).argVec1.y) + " " +_
+                                  trimV(pdfCommand(i).argVec2.x) + " " + trimV(pdfCommand(i).argVec2.y) + " " +_
+                                  trimV(pdfCommand(i).argVec3.x) + " " + trimV(pdfCommand(i).argVec3.y) + " c" + CHR$(13)
+      CASE PDF_COMM_APPEND_BEZIER_CURVE_23
+        textStream = textStream + trimV(pdfCommand(i).argVec2.x) + " " + trimV(pdfCommand(i).argVec2.y) + " " +_
+                                  trimV(pdfCommand(i).argVec3.x) + " " + trimV(pdfCommand(i).argVec3.y) + " v" + CHR$(13)
+      CASE PDF_COMM_APPEND_BEZIER_CURVE_13
+        textStream = textStream + trimV(pdfCommand(i).argVec1.x) + " " + trimV(pdfCommand(i).argVec1.y) + " " +_
+                                  trimV(pdfCommand(i).argVec3.x) + " " + trimV(pdfCommand(i).argVec3.y) + " y" + CHR$(13)
+      CASE PDF_COMM_CLOSE_PATH
+        textStream = textStream + " h" + CHR$(13)
+      CASE PDF_COMM_RECTANGLE
+        textStream = textStream + trimV(pdfCommand(i).argVec1.x) + " " + trimV(pdfCommand(i).argVec1.y) + " " +_
+                                  trimV(pdfCommand(i).argVec2.x) + " " + trimV(pdfCommand(i).argVec2.y) + " re" + CHR$(13)
+      CASE PDF_COMM_STROKE_PATH
+        textStream = textStream + " S" + CHR$(13)
+      CASE PDF_COMM_CLOSE_AND_STROKE
+        textStream = textStream + " s" + CHR$(13)
+      CASE PDF_COMM_FILL_PATH
+        textStream = textStream + " F" + CHR$(13)
+      CASE PDF_COMM_FILL_EO
+        textStream = textStream + " f*" + CHR$(13)
+      CASE PDF_COMM_FILL_STROKE
+        textStream = textStream + " B" + CHR$(13)
+      CASE PDF_COMM_FILL_STROKE_EO
+        textStream = textStream + " B*" + CHR$(13)
+      CASE PDF_COMM_CLOSE_FILL_STROKE
+        textStream = textStream + " b" + CHR$(13)
+      CASE PDF_COMM_CLOSE_FILL_STROKE_EO
+        textStream = textStream + " b*" + CHR$(13)
+      CASE PDF_COMM_END_PATH
+        textStream = textStream + " n" + CHR$(13)
+      CASE PDF_COMM_PUSH_GRAPHIC_STACK
+        textStream = textStream + " q" + CHR$(13)
+      CASE PDF_COMM_POP_GRAPHIC_STACK
+        textStream = textStream + " Q" + CHR$(13)
+      CASE PDF_COMM_SET_COLOR_STROKE
+        textStream = textStream + trimV(fixDecNot!(pdfCommand(i).argSingle1)) + " "_
+                                + trimV(fixDecNot!(pdfCommand(i).argSingle2)) + " "_
+                                + trimV(fixDecNot!(pdfCommand(i).argSingle3)) + " RG" + CHR$(13)
+      CASE PDF_COMM_SET_COLOR_NONSTROKE
+        textStream = textStream + trimV(fixDecNot!(pdfCommand(i).argSingle1)) + " "_
+                                + trimV(fixDecNot!(pdfCommand(i).argSingle2)) + " "_
+                                + trimV(fixDecNot!(pdfCommand(i).argSingle3)) + " rg" + CHR$(13)
+      CASE PDF_COMM_PUT_IMAGE
+        textStream = textStream + "/" + pdfCommand(i).s1 + " Do" + CHR$(13)
+      CASE PDF_COMM_LINE_CAP_STYLE
+        textStream = textStream + trimV(pdfCommand(i).argLong1) + " J" + CHR$(13)
+      CASE PDF_COMM_LINE_JOIN_STYLE
+        textStream = textStream + trimV(pdfCommand(i).argLong1) + " j" + CHR$(13)
+      CASE PDF_COMM_LINE_DASH_PATTERN
+        textStream = textStream + " [" + trimV(pdfCommand(i).argLong1) + _
+                                  " " + trimV(pdfCommand(i).argLong2) + _
+                                  "] " + trimV(pdfCommand(i).argLong3) + _
+                                  " d" + CHR$(13)
+    END SELECT
+  NEXT
+
+  pdfObject(pdfPage(pdfStates.current_page).object).objectString = PDF_ADD_OBJECT_PRE("", pdfPage(pdfStates.current_page).object, 0) _
+                                                                  + PDF_ADD_PAGE_CONTENT$("", textStream ) + PDF_ADD_OBJECT_POST$("")
+  pdfObject(0).objectString = PDF_ADD_HEADER$
+
+  cnt = UBOUND(pdfObject)
+
+  b = ""
+  FOR i = 0 TO cnt - 1 '-exclude the xref itself
+    b = b + pdfObject(i).objectString
+  NEXT
+
+  xrefStart = LEN(b)
+
+  xref = pdfAddObject(PDF_OBJECT_TYPE_XREF)
+  pdfObject(xref).objectString = PDF_ADD_XREF$("", cnt)
+
+  trailer = pdfAddObject(PDF_OBJECT_TYPE_TRAILER)
+  pdfObject(trailer).objectString = PDF_ADD_TRAILER("", cnt, infoObj)
+
+  xrs = pdfAddObject(PDF_OBJECT_TYPE_XREF_START)
+  pdfObject(xrs).objectString = PDF_ADD_XREFSTART("", xrefStart)
+
+  eoff = pdfAddObject(PDF_OBJECT_TYPE_EOF)
+  pdfObject(eoff).objectString = PDF_ADD_EOF("")
+  '------------------------------------------------------------------------
+  fln = FREEFILE
+  OPEN filename FOR OUTPUT AS #fln
+  FOR i = 0 TO UBOUND(pdfObject) - 1
+    PRINT #fln, pdfObject(i).objectString
+  NEXT
+  CLOSE #fln
+  $IF PDFLOG = TRUE THEN
+    CLOSE #pdflogfile
+  $END IF
+  clearPdf
+END SUB
+
+FUNCTION PDF_ADD_OBJECT_PRE$ (in AS STRING, ob AS LONG, gen AS LONG)
+  PDF_ADD_OBJECT_PRE = in + trimV(ob) + " " + trimV(gen) + " obj" + CHR$(13)
+END FUNCTION
+
+FUNCTION PDF_ADD_OBJECT_POST$ (in AS STRING)
+  PDF_ADD_OBJECT_POST = in + "endobj" + CHR$(13)
+END FUNCTION
+
+FUNCTION PDF_ADD_HEADER$
+  PDF_ADD_HEADER = "%PDF-" + PDF_VERSION + CHR$(13)
+END FUNCTION
+
+FUNCTION PDF_ADD_EOF$ (in AS STRING)
+  PDF_ADD_EOF = in + "%%EOF" + CHR$(13)
+END FUNCTION
+
+FUNCTION PDF_ADD_XREFSTART$ (in AS STRING, xrs AS LONG)
+  DIM s AS STRING
+  s = in + "startxref" + CHR$(13)
+  s = s + trimV$(xrs) + CHR$(13)
+  PDF_ADD_XREFSTART$ = s
+END FUNCTION
+
+FUNCTION PDF_ADD_XREF$ (in AS STRING, cnt AS LONG)
+  DIM i AS LONG
+  DIM AS STRING s, b
+  s = in + "xref" + CHR$(13) ' Xref
+  s = s + "0 " + trimV$(cnt) + CHR$(13) ' object count
+  s = s + "0000000000 65535 f " + CHR$(10)
+  FOR i = 0 TO cnt - 2 '-exclude the xref itself
+    b = b + pdfObject(i).objectString
+    s = s + numPadZero$(10, LEN(b)) + " 00000 n " + CHR$(10)
+  NEXT
+  PDF_ADD_XREF$ = s
+END FUNCTION
+
+FUNCTION PDF_ADD_CATALOG$ (in AS STRING, pgs AS STRING, outlines AS STRING)
+  DIM s AS STRING
+  s = in + "<<" + CHR$(13)
+  s = s + "/Type /Catalog" + CHR$(13)
+  s = s + "/Pages " + pgs + CHR$(13)
+  s = s + "/Outlines " + outlines + CHR$(13)
+  s = s + ">>" + CHR$(13)
+  PDF_ADD_CATALOG$ = s
+END FUNCTION
+
+FUNCTION PDF_ADD_OUTLINES$ (in AS STRING)
+  DIM s AS STRING
+  s = in + "<<" + CHR$(13)
+  s = s + "/Type /Outlines" + CHR$(13)
+  s = s + "/Count 0" + CHR$(13)
+  s = s + ">>" + CHR$(13)
+  PDF_ADD_OUTLINES$ = s
+END FUNCTION
+
+FUNCTION PDF_ADD_PAGES$ (in AS STRING, cnt AS LONG, kids AS STRING)
+  DIM s AS STRING
+  s = in + "<<" + CHR$(13)
+  s = s + "/Type /Pages" + CHR$(13)
+  s = s + "/Count " + trimV$(cnt) + CHR$(13)
+  s = s + "/Kids [ " + kids + " ]" + CHR$(13)
+  s = s + ">>" + CHR$(13)
+  PDF_ADD_PAGES$ = s
+END FUNCTION
+
+FUNCTION PDF_ADD_PAGE$ (in AS STRING, parent AS STRING, fonts AS STRING, proc AS STRING, cont AS STRING, mediaBox AS STRING, cropBox AS STRING)
+  DIM s AS STRING
+  DIM AS LONG i
+  s = in + "<<" + CHR$(13)
+  s = s + "/Type /Page" + CHR$(13)
+  s = s + "/Parent " + parent + CHR$(13)
+  s = s + "/MediaBox [ " + mediaBox + " ]" + CHR$(13)
+  s = s + "/CropBox [ " + cropBox + " ]" + CHR$(13)
+  s = s + "/Contents " + cont + CHR$(13)
+  s = s + "/Resources" + CHR$(13)
+  s = s + "<<" + CHR$(13)
+  s = s + "/ProcSet " + proc + CHR$(13)
+  s = s + "/Font" + CHR$(13)
+  s = s + "<<" + CHR$(13)
+  s = s + fonts + CHR$(13)
+  s = s + ">>" + CHR$(13)
+  IF pdfStates.imgCount > 0 THEN
+    s = s + "/XObject << "
+    FOR i = 1 TO pdfStates.imgCount
+      s = s + "/" + pdfImage(i).nm + " " + trimV(pdfImage(i).obj) + " 0 R "
+    NEXT
+    s = s + " >> "
+  END IF
+  s = s + ">>" + CHR$(13)
+  s = s + ">>" + CHR$(13)
+  PDF_ADD_PAGE$ = s
+END FUNCTION
+
+FUNCTION PDF_ADD_TRAILER$ (in AS STRING, cnt AS LONG, info AS LONG)
+  DIM s AS STRING
+  s = in + "trailer" + CHR$(13) ' trailer
+  s = s + "<<" + CHR$(13)
+  s = s + "/Size " + trimV(cnt) + CHR$(13)
+  s = s + "/Root 1 0 R" + CHR$(13)
+  s = s + "/Info " + trimV(info) + " 0 R" + CHR$(13)
+  s = s + ">>" + CHR$(13)
+  PDF_ADD_TRAILER = s
+END FUNCTION
+
+FUNCTION PDF_ADD_PAGE_CONTENT$ (in AS STRING, textStream AS STRING)
+  DIM AS STRING s
+  IF pdfDefault.compressedText THEN
+    textStream = encode85(_DEFLATE$(textStream))
+  END IF
+
+  s = in + "<< /Length " + trimV$(LEN(textStream)) + CHR$(13)
+
+  IF pdfDefault.compressedText THEN
+    s = s + "/Filter [/ASCII85Decode /FlateDecode] " + CHR$(13)
+  END IF
+  s = s + " >>" + CHR$(13)
+  s = s + "stream" + CHR$(13)
+  s = s + textStream + CHR$(13) ' insert Text Stream
+  s = s + "endstream" + CHR$(13)
+  PDF_ADD_PAGE_CONTENT = s
+END FUNCTION
+
+FUNCTION PDF_ADD_FONT$ (in AS STRING, fname AS STRING, basefont AS STRING, encoding AS STRING)
+  DIM s AS STRING
+  s = in + "<<" + CHR$(13)
+  s = s + "/Type /Font" + CHR$(13)
+  s = s + "/Subtype /Type1" + CHR$(13)
+  s = s + "/Name /" + fname + CHR$(13)
+  s = s + "/BaseFont /" + basefont + CHR$(13)
+  s = s + "/Encoding /" + encoding + CHR$(13)
+  s = s + ">>" + CHR$(13)
+  PDF_ADD_FONT = s
+END FUNCTION
+
+' Beginning with PDF 1.4, this feature is considered obsolete
+FUNCTION PDF_ADD_PROC$ (in AS STRING, pr AS _BYTE)
+  DIM AS STRING s, p
+  p = ""
+  IF pr AND PDF_PROC_PDF THEN p = p + "/PDF "
+  IF pr AND PDF_PROC_TEXT THEN p = p + "/Text "
+  IF pr AND PDF_PROC_IMAGEB THEN p = p + "/ImageB "
+  IF pr AND PDF_PROC_IMAGEC THEN p = p + "/ImageC "
+  IF pr AND PDF_PROC_IMAGEI THEN p = p + "/ImageI "
+  s = in + "[ " + p + "]" + CHR$(13)
+  PDF_ADD_PROC = s
+END FUNCTION
+
+FUNCTION PDF_ADD_DOCUMENT_INFO$ (in AS STRING)
+  DIM AS STRING s
+  s = in + "<< /Title (" + pdfDefault.info.title + ")" + CHR$(13)
+  s = s + "/Author (" + pdfDefault.info.author + ")" + CHR$(13)
+  s = s + "/Subject (" + pdfDefault.info.subject + ")" + CHR$(13)
+  s = s + "/Keywords (" + pdfDefault.info.keywords + ")" + CHR$(13)
+  s = s + "/Creator (" + pdfDefault.info.creator + ")" + CHR$(13)
+  s = s + "/Producer (" + pdfDefault.info.producer + ")" + CHR$(13)
+  s = s + "/CreationDate (" + currIECTime$ + ")" + CHR$(13)
+  s = s + "/ModDate (" + currIECTime$ + ")" + CHR$(13)
+  s = s + ">>" + CHR$(13)
+  PDF_ADD_DOCUMENT_INFO$ = s
+END FUNCTION
+
+FUNCTION PDF_ADD_IMAGE$ (in AS STRING, im AS LONG)
+  DIM AS STRING s, img
+  DIM AS LONG h, w
+  h = _HEIGHT(pdfImage(im).IMG)
+  w = _WIDTH(pdfImage(im).IMG)
+
+  s = in + "<< /Type /XObject" + CHR$(13)
+  s = s + "/Subtype /Image" + CHR$(13)
+  s = s + "/Width " + trimV(w) + CHR$(13)
+  s = s + "/Height " + trimV(h) + CHR$(13)
+  'DeviceGray, DeviceRGB, DeviceCMYK
+  s = s + "/ColorSpace "
+  SELECT CASE pdfImage(im).imageDevice
+    CASE PDF_IMAGE_DEVICE_GRAY
+      s = s + "/DeviceGray" + CHR$(13)
+      img = encodeGrayImage(im)
+    CASE PDF_IMAGE_DEVICE_RGB
+      s = s + "/DeviceRGB" + CHR$(13)
+      img = encodeColorImage(im)
+    CASE PDF_IMAGE_DEVICE_CMYK
+      s = s + "/DeviceCMYK" + CHR$(13)
+      ' no encoder yet
+  END SELECT
+  s = s + "/BitsPerComponent 8" + CHR$(13) ' Leave this for now
+  s = s + "/Length " + trimV(LEN(img)) + CHR$(13)
+  s = s + "/Filter [/ASCII85Decode /FlateDecode]" + CHR$(13)
+  s = s + ">>" + CHR$(13)
+  s = s + "stream" + CHR$(13)
+  s = s + img + CHR$(13)
+  s = s + "endstream" + CHR$(13)
+  PDF_ADD_IMAGE = s
+END FUNCTION
+
+FUNCTION encodeGrayImage$ (im AS LONG)
+  DIM AS _UNSIGNED _BYTE gray, red, green, blue
+  DIM AS STRING e: e = ""
+  'Blatantly "Borrowed" from the _MEMIMAGE help example
+  DIM Buffer AS _MEM: Buffer = _MEMIMAGE(pdfImage(im).IMG) 'Get a memory reference to our image
+  DIM O AS _OFFSET, O_Last AS _OFFSET
+  O = Buffer.OFFSET 'We start at this offset
+  O_Last = Buffer.OFFSET + _WIDTH(pdfImage(im).IMG) * _HEIGHT(pdfImage(im).IMG) * 4 'We stop when we get to this offset
+  'use on error free code ONLY!
+  $CHECKING:OFF
+  DO
+    red = _MEMGET(Buffer, O, _UNSIGNED _BYTE)
+    green = _MEMGET(Buffer, O + 1, _UNSIGNED _BYTE)
+    blue = _MEMGET(Buffer, O + 2, _UNSIGNED _BYTE)
+
+    gray = INT(pdfDefault.grayScaleCoeff.red * red) +_
+           INT(pdfDefault.grayScaleCoeff.green * green) +_
+           INT(pdfDefault.grayScaleCoeff.blue * blue)
+    e = e + CHR$(gray)
+    O = O + 4
+  LOOP UNTIL O = O_Last
+  'turn checking back on when done!
+  $CHECKING:ON
+  _MEMFREE Buffer
+
+  encodeGrayImage = encode85(_DEFLATE$(e))
+END FUNCTION
+
+
+FUNCTION encodeColorImage$ (im AS LONG)
+  DIM AS _UNSIGNED _BYTE red, green, blue
+  DIM AS STRING e: e = ""
+  'Blatantly "Borrowed" from the _MEMIMAGE help example
+  DIM Buffer AS _MEM: Buffer = _MEMIMAGE(pdfImage(im).IMG) 'Get a memory reference to our image
+  DIM O AS _OFFSET, O_Last AS _OFFSET
+  O = Buffer.OFFSET 'We start at this offset
+  O_Last = Buffer.OFFSET + _WIDTH(pdfImage(im).IMG) * _HEIGHT(pdfImage(im).IMG) * 4 'We stop when we get to this offset
+  'use on error free code ONLY!
+  $CHECKING:OFF
+  DO
+    red = _MEMGET(Buffer, O, _UNSIGNED _BYTE)
+    e = e + CHR$(red)
+    green = _MEMGET(Buffer, O + 1, _UNSIGNED _BYTE)
+    e = e + CHR$(green)
+    blue = _MEMGET(Buffer, O + 2, _UNSIGNED _BYTE)
+    e = e + CHR$(blue)
+    O = O + 4
+  LOOP UNTIL O = O_Last
+  'turn checking back on when done!
+  $CHECKING:ON
+  _MEMFREE Buffer
+  encodeColorImage = encode85(_DEFLATE$(e))
+END FUNCTION
+
+FUNCTION trimV$ (v AS SINGLE)
+  trimV = _TRIM$(STR$(v))
+END FUNCTION
+
+FUNCTION numPadZero$ (pad AS LONG, num AS LONG)
+  DIM AS LONG i, s
+  DIM AS STRING p, n
+  p = STRING$(pad, "0")
+  n = _TRIM$(STR$(num))
+  s = LEN(p) - LEN(n)
+  FOR i = 1 TO LEN(n)
+    MID$(p, s + i) = MID$(n, i, 1)
+  NEXT
+  numPadZero$ = p
+END FUNCTION
+
+FUNCTION insertText$ (text AS STRING, insert AS STRING, ps AS LONG)
+  DIM AS STRING l, r
+  l = LEFT$(text, ps)
+  r = RIGHT$(text, LEN(text) - ps)
+  insertText$ = l + insert + r
+END FUNCTION
+
+FUNCTION escapeSeq$ (text AS STRING)
+  DIM AS LONG i
+  DIM AS STRING ch
+  i = 1: DO UNTIL i > LEN(text)
+    ch = MID$(text, i, 1)
+    SELECT CASE ASC(ch)
+      CASE 8 '\b    Backspace (BS)
+        MID$(text, i) = "\"
+        text = insertText(text, "b", i)
+      CASE 9 '\t    Horizontal tab (HT)
+        MID$(text, i) = "\"
+        text = insertText(text, "t", i)
+      CASE 10 '\n   Line feed (LF)
+        MID$(text, i) = "\"
+        text = insertText(text, "n", i)
+      CASE 12 '\f   Form feed (FF)
+        MID$(text, i) = "\"
+        text = insertText(text, "f", i)
+      CASE 13 '\r   Carriage return (CR)
+        MID$(text, i) = "\"
+        text = insertText(text, "r", i)
+      CASE 40 '\(   Left parenthesis
+        MID$(text, i) = "\"
+        text = insertText(text, "(", i)
+        i = i + 1
+      CASE 41 '\)   Right parenthesis
+        MID$(text, i) = "\"
+        text = insertText(text, ")", i)
+        i = i + 1
+      CASE 92 '\\   Backslash  or \ddd octal
+        'To Do: check if variable
+        IF NOT isDigit(MID$(text, i + 1, 1)) THEN ' if digit assume its octal triplit
+          MID$(text, i) = "\"
+          text = insertText(text, "\", i)
+          i = i + 1 'jump pass the slash
+        END IF
+    END SELECT
+  i = i + 1: LOOP
+  escapeSeq = text
+END FUNCTION
+
+FUNCTION isDigit (s AS STRING)
+  isDigit = INSTR("0123456789", s) > 0
+END FUNCTION
+
+SUB clearPdf
+  REDIM pdfStates AS tPDFSTATE
+  REDIM pdfCommand(0) AS tPDFCOMMAND
+  REDIM pdfFont(0 TO 1) AS tPDFFONT
+  REDIM pdfPage(0 TO 1) AS tPDFPAGE
+  REDIM pdfObject(0 TO 1) AS tPDFOBJECT
+  REDIM pdfObjectString(0 TO 20) AS STRING
+  REDIM pdfImage(0 TO 1) AS tPDFIMAGE
+END SUB
+
+FUNCTION encode85$ (in AS STRING)
+  DIM AS LONG l
+  DIM AS STRING o, i, k
+  o = ""
+  i = in
+  l = 4 - (LEN(i) MOD 4)
+  IF (LEN(i) MOD 4) > 0 THEN i = i + STRING$(l, CHR$(0))
+  DO
+    k = LEFT$(i, 4)
+    o = o + en85$(k)
+    i = MID$(i, 5)
+  LOOP WHILE LEN(i)
+  o = LEFT$(o, LEN(o) - l)
+  encode85 = o + "~>"
+END FUNCTION
+
+FUNCTION en85$ (in AS STRING)
+  DIM AS _UNSIGNED LONG x
+  DIM AS STRING o: o = "     "
+  x = _SHL(ASC(in, 1), 24) OR _SHL(ASC(in, 2), 16) OR _SHL(ASC(in, 3), 8) OR ASC(in, 4)
+  ASC(o, 5) = ((x MOD 85) + 33)
+  x = (INT(x / 85))
+  ASC(o, 4) = ((x MOD 85) + 33)
+  x = (INT(x / 85))
+  ASC(o, 3) = ((x MOD 85) + 33)
+  x = (INT(x / 85))
+  ASC(o, 2) = ((x MOD 85) + 33)
+  x = (INT(x / 85))
+  ASC(o, 1) = ((x MOD 85) + 33)
+  x = (INT(x / 85))
+  en85$ = o
+END FUNCTION
+
+
+'(D:YYYYMMDDHHmmSSOHH'mm')
+'where
+'YYYY is the year
+'MM is the month
+'DD is the day (01-31)
+'HH is the hour (00-23)
+'mm is the minute (00-59)
+'SS is the second (00-59)
+'O is the relationship of local time to Universal Time (UT), denoted by one of
+'the characters +, -, or Z (see below)
+'HH followed by ' is the absolute value of the offset from UT in hours (00-23)
+'mm followed by ' is the absolute value of the offset from UT in minutes (00-59)
+
+FUNCTION CurrYear$
+  CurrYear$ = RIGHT$(DATE$, 4)
+END FUNCTION
+FUNCTION currMonth$
+  currMonth$ = LEFT$(DATE$, 2)
+END FUNCTION
+FUNCTION currDay$
+  currDay$ = MID$(DATE$, 4, 2)
+END FUNCTION
+FUNCTION currHour$
+  currHour$ = LEFT$(TIME$, 2)
+END FUNCTION
+FUNCTION currMin$
+  currMin$ = MID$(TIME$, 4, 2)
+END FUNCTION
+FUNCTION currSec$
+  currSec$ = MID$(TIME$, 7, 2)
+END FUNCTION
+
+FUNCTION IECTimeDate$ (year AS STRING, month AS STRING, day AS STRING, hour AS STRING, minute AS STRING, second AS STRING, O AS STRING, HH AS STRING, mm AS STRING)
+  IECTimeDate = "D:" + year + month + day + hour + minute + second + " " + O + HH + "'" + mm + "'"
+END FUNCTION
+FUNCTION currIECTime$
+  currIECTime$ = IECTimeDate$(CurrYear, currMonth, currDay, currHour, currMin, currSec, _
+                pdfDefault.info.creationDate.O, pdfDefault.info.creationDate.HH, pdfDefault.info.creationDate.mm)
+END FUNCTION
+
+FUNCTION nToOctal$ (nn AS INTEGER)
+  DIM AS LONG n: n = nn
+  DIM AS STRING octalNum
+  DO WHILE n <> 0
+    octalNum = octalNum + _TRIM$(STR$(n MOD 8))
+    n = INT(n / 8)
+  LOOP
+  nToOctal = numPadZero(3, VAL(octalNum)) 'stupid but it works
+END FUNCTION
+
+FUNCTION fixDecNot! (a AS SINGLE) 'truncates excessive decimal points
+  fixDecNot! = INT(a * 10000.0!) / 10000.0!
+END FUNCTION
+
