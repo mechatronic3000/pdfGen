@@ -2,13 +2,15 @@
 'Library include
 '$INCLUDE:'pdfGen.bi'
 'Fill in the Meta Data
-pdfDefault.compressedText = False
 pdfSetTitle "PDF Simple Example"
 pdfSetSubject "Example"
 pdfSetAuthor "Justsomeguy"
 pdfSetKeywords "PDF, Example, QB64pe, Special Characters"
 pdfSetCreator "pdfGen and QB64pe"
 pdfSetProducer "Justsomeguy"
+
+'This encoding allows has the special characters
+pdfDefault.fontEncoding = PDF_FONT_ENCODING_MAC_ROMAN
 
 'Create a page
 pdfAddPage
@@ -34,7 +36,7 @@ pdfAddText "These are some special characters \201 \202 \203 \204 \251"
 pdfEndText
 
 'Generate File
-pdfGen "Example 1.pdf"
+pdfGen "pdfSpecialCharacterExample.pdf"
 SYSTEM
 'Library include
 '$INCLUDE:'pdfGen.bm'
