@@ -207,6 +207,8 @@ CONST PDF_RENDER_MODE_ADD_PATH = 7
 '------------------------------------------------------------------------
 CONST False%% = 0
 CONST True%% = NOT False
+
+CONST PDF_COMMAND_BUFFER_CHUNK = 10000
 '------------------------------------------------------------------------
 TYPE tCOLORRGB
   red AS SINGLE
@@ -348,7 +350,8 @@ TYPE tPDFVARS
 END TYPE
 '------------------------------------------------------------------------
 DIM SHARED pdfStates AS tPDFSTATE
-DIM SHARED pdfCommand(0) AS tPDFCOMMAND
+DIM SHARED pdfCommand(PDF_COMMAND_BUFFER_CHUNK) AS tPDFCOMMAND
+DIM SHARED pdfCommandCount AS _INTEGER64
 DIM SHARED pdfFont(0 TO 1) AS tPDFFONT
 DIM SHARED pdfImage(0 TO 1) AS tPDFIMAGE
 DIM SHARED pdfPage(0 TO 1) AS tPDFPAGE
@@ -356,6 +359,7 @@ DIM SHARED pdfObject(0 TO 1) AS tPDFOBJECT
 DIM SHARED pdfObjectString(0 TO 20) AS STRING
 DIM SHARED pdfDefault AS tPDFDEFAULT
 DIM SHARED pdfVars(0) AS tPDFVARS
+
 $IF PDFLOG = TRUE THEN
 DIM SHARED pdflogfile AS LONG
 $END IF

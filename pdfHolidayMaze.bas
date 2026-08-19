@@ -349,13 +349,13 @@ SUB drawMaze (map() AS tMAP, xp AS LONG, yp AS LONG, scale AS LONG)
   DIM AS LONG x, y, maze_size_x, maze_size_y, count, mcount, p
   maze_size_x = UBOUND(map, 1)
   maze_size_y = UBOUND(map, 2)
-  mcount = maze_size_x * maze_size_y
+  mcount = (maze_size_x + 1) * (maze_size_y + 1)
   p = CSRLIN
   FOR y = 0 TO maze_size_y
     FOR x = 0 TO maze_size_x
-      LOCATE p
+      LOCATE p, 1
       count = y * maze_size_y + x
-      PRINT USING "Cell ###### out of ######. "; count, mcount
+      PRINT USING "Cell ###### out of ######. "; count, mcount;
       pdfSetLineCapStyle PDF_LINE_CAP_ROUND
       pdfSetStrokeWidth 1
 
