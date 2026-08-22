@@ -69,32 +69,6 @@ $INCLUDEONCE
 '_pdf_)
 PRINT "Doh! I'm the library not the main program!"
 
-SUB pdfSetVar (id AS STRING, value AS STRING)
-  DIM AS LONG uB, i
-  uB = UBOUND(pdfVars)
-  i = 0: DO
-    'check if it already exist, if so put value there
-    IF pdfVars(i).varName = id THEN
-      pdfVars(i).varValue = value
-      EXIT SUB
-    END IF
-  i = i + 1: LOOP WHILE i < uB
-  REDIM _PRESERVE pdfVars(uB + 1) AS tPDFVARS
-  uB = UBOUND(pdfVars)
-  pdfVars(uB).varName = id
-  pdfVars(uB).varValue = value
-END SUB
-
-FUNCTION pdfGetVar$ (id AS STRING)
-  DIM AS LONG uB, i
-  uB = UBOUND(pdfVars)
-  i = 0: DO
-    IF UCASE$(pdfVars(i).varName) = UCASE$(id) THEN
-      pdfGetVar = pdfVars(i).varValue
-      EXIT FUNCTION
-    END IF
-  i = i + 1: LOOP WHILE i <= uB
-END FUNCTION
 
 '_pdf_E+#40,740@F2,40W40L44
 '_pdf_T     Library Subs
@@ -352,6 +326,139 @@ SUB pdfAddText (s AS STRING)
 
   pdfStates.text = True
 END SUB
+
+
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfSetVar (id AS STRING, value AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Used in conjuction with 'pdfAddVariableText'. Sets a variable, so that it can be used at PDF generation. Useful for text that need to be added after pages have been generated. Variables are not case sensitive and can be any valid string. A usecase example could be a table of contents where actual page numbers are not known until after the page is generated.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   id - Variable Name
+  '_pdf_T   value - Variable Value
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Nothing
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF VarText Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T ' Initialize variables and font
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T ' Variables are not case sensitive
+  '_pdf_T pdfSetVar "VAR", "This is Some Text!"
+  '_pdf_T pdfSetVar "simple variable", "More Text!"
+  '_pdf_T ' Add page
+  '_pdf_T pdfAddPage
+  '_pdf_T ' Display First Variable
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 24
+  '_pdf_T pdfSetPosition 200, 350
+  '_pdf_T pdfAddVariableText "VAR"
+  '_pdf_T pdfEndText
+  '_pdf_T ' Display Second Variable
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 28
+  '_pdf_T pdfSetPosition 200, 320
+  '_pdf_T pdfAddVariableText "simple variable"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfVarTextExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  DIM AS LONG uB, i
+  uB = UBOUND(pdfVars)
+  i = 0: DO
+    'check if it already exist, if so put value there
+    IF pdfVars(i).varName = id THEN
+      pdfVars(i).varValue = value
+      EXIT SUB
+    END IF
+  i = i + 1: LOOP WHILE i < uB
+  REDIM _PRESERVE pdfVars(uB + 1) AS tPDFVARS
+  uB = UBOUND(pdfVars)
+  pdfVars(uB).varName = id
+  pdfVars(uB).varValue = value
+END SUB
+
+FUNCTION pdfGetVar$ (id AS STRING)
+  DIM AS LONG uB, i
+  uB = UBOUND(pdfVars)
+  i = 0: DO
+    IF UCASE$(pdfVars(i).varName) = UCASE$(id) THEN
+      pdfGetVar = escapeSeq(pdfVars(i).varValue)
+      EXIT FUNCTION
+    END IF
+  i = i + 1: LOOP WHILE i <= uB
+END FUNCTION
+
+
+'_pdf_E+#40,740@F2,14W60L16
+'_pdf_(
+SUB pdfAddVariableText (s AS STRING)
+  '_pdf_)
+  '_pdf_@F1,14W60L16
+  '_pdf_T
+  '_pdf_T Used in conjuction with 'pdfSetVar'. Adds the value of a variable to the page at PDF generation. Useful for text that need to be added after pages have been generated. Variables are not case sensitive and can be any valid string. A usecase example could be a table of contents where actual page numbers are not known until after the page is generated.
+  '_pdf_T
+  '_pdf_@F2,14W60L16TParameters
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   s - Variable Name
+  '_pdf_T
+  '_pdf_@F2,14W60L16TReturns
+  '_pdf_@F1,14W60L16T
+  '_pdf_T   Value of variable at PDF generation
+  '_pdf_T
+  '_pdf_@F2,14W60L16TExample
+  '_pdf_T _________________________________________________________
+  '_pdf_@F1,10W80L11T
+  '_pdf_T '$INCLUDE:'pdfGen.bi'
+  '_pdf_T
+  '_pdf_T pdfSetTitle "PDF VarText Example"
+  '_pdf_T pdfSetAuthor "Justsomeguy"
+  '_pdf_T ' Initialize variables and font
+  '_pdf_T pdfLoadFont "F1", PDF_FONT_TIMES_ROMAN
+  '_pdf_T ' Variables are not case sensitive
+  '_pdf_T pdfSetVar "VAR", "This is Some Text!"
+  '_pdf_T pdfSetVar "simple variable", "More Text!"
+  '_pdf_T ' Add page
+  '_pdf_T pdfAddPage
+  '_pdf_T ' Display First Variable
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 24
+  '_pdf_T pdfSetPosition 200, 350
+  '_pdf_T pdfAddVariableText "VAR"
+  '_pdf_T pdfEndText
+  '_pdf_T ' Display Second Variable
+  '_pdf_T pdfBeginText
+  '_pdf_T pdfSetFontSize "F1", 28
+  '_pdf_T pdfSetPosition 200, 320
+  '_pdf_T pdfAddVariableText "simple variable"
+  '_pdf_T pdfEndText
+  '_pdf_T
+  '_pdf_T pdfGen "pdfVarTextExample.pdf"
+  '_pdf_T SYSTEM
+  '_pdf_T
+  '_pdf_T '$INCLUDE:'pdfGen.bm'
+
+  pdfCommand(pdfCommandCount).command = PDF_COMM_VARIABLE_TEXT
+  pdfCommand(pdfCommandCount).s = s
+  incrCommandCount
+
+  pdfStates.text = True
+END SUB
+
 '_pdf_E+#40,740@F2,14W60L16
 '_pdf_(
 SUB pdfAddTextBlock (l AS LONG, s AS STRING)
@@ -3150,6 +3257,10 @@ SUB pdfGen (filename AS STRING)
         ' Per spec a line cannot exceed 256 characters, unless it is a compressed stream
         IF LEN(pdfCommand(i).s) > 240 THEN pdfCommand(i).s = LEFT$(pdfCommand(i).s, 240)
         textStream = textStream + " (" + pdfCommand(i).s + ") Tj" + CHR$(13)
+      CASE PDF_COMM_VARIABLE_TEXT
+        'pdfGetVar$ (id AS STRING)
+        'IF LEN(pdfCommand(i).s) > 240 THEN pdfCommand(i).s = LEFT$(pdfCommand(i).s, 240)
+        textStream = textStream + " (" + pdfGetVar$(pdfCommand(i).s) + ") Tj" + CHR$(13)
       CASE PDF_COMM_TEXT_BLOCK
         'Put pdfVar values into string now
         DIM AS STRING tempStr: tempStr = pdfCommand(i).s
